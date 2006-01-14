@@ -1,0 +1,8 @@
+Jean-Philippe Barrette-LaPierre (5 September 2005) version 0.2
+- Added some Fast string correction to lisp code.
+
+Jean-Philippe Barrette-LaPierre (17 April 2005) version 0.1
+- Added utils.lisp file.
+
+Jean-Philippe Barrette-LaPierre (13 April 2005) version 0.1
+- Added transposition operations for Fast String Correction (fsc.py)

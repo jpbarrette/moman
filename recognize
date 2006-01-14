@@ -1,0 +1,185 @@
+#!/usr/bin/python
+
+import getopt
+import os
+import pickle
+import sys
+
+
+
+def usage():
+    print """Usage: recognize [OPTION]... [word] ...
+    
+If a "word" argument is given, it check if its a valid word,
+and if not, it gives suggestions.
+
+If the --gen option is not given, inputfile must be a valid
+IADFA file, created by the "--gen" option. If the "--gen"
+option is given, inputfile, must be an sorted dictionnary file. 
+
+Mandatory arguments to long options are mandatory for short options too.
+-d, --dico-file=FILE            this is the dictionnary file that will
+                                be used to generate the IADFA. 
+-e, --export=FILE               export the IADFA to a graphviz file.
+-i, --iadfa=FILE                Use this file for the IADFA. If you
+                                specify the '-d' or '--dico' option,
+                                this is where the IADFA will be stored.
+-n, --distance=n                this is the levenshtein distance. [default=1]
+-o, --oflazer                   use the [oflazer96errortolerant] algorithm,
+                                instead of the [schulz02fast] faster algorithm.
+-t, --transitions-file=FILE     the file that contain/will contain the OFlazer
+                                transitions. (only works if you specified that
+                                you want to use OFlazer algorithm.
+-v, --verbose                   verbose mode. It causes the program to print
+                                debugging messages about its progress.
+"""
+
+def generateIADFA(dictFilename, iadfaFilename):
+    debug("loading IADFA code")
+    from finenight.iadfa import IncrementalAdfa
+    debug("Reading the dico file.")
+    f = open(dictFilename, "r");
+    words = []
+    for line in f:
+        if line[-1] == "\n":
+            line = line[0:-1]
+        words.append(line)
+    words.sort()
+    debug("Starting the FSA construction.")
+    a = IncrementalAdfa(words, sorted = True)
+    pickle.dump(a,open(iadfaFilename, "w"))
+    debug("FSA saved.")
+    return a
+
+
+
+def exportFileToPS(fsa, filename):
+    debug("Exporting the fsa in a graphviz format.")
+    fsa.graphVizExport(filename)
+
+
+def debug(output):
+    if verbose is True:
+        print output
+
+
+verbose = False
+config = {"transitionsFile" : "data/levenshtein.dat",
+          "iadfaFile": "data/iadfa.dat"}
+
+
+
+def getTransitionStates(filename, distance):
+    
+    from finenight.possibleStates import genTransitions
+    transitions = {}
+    try:
+        debug("Checking for existing transitions file")
+        transitions = pickle.load(open(filename, "r"))
+        debug("Transitions file loaded")
+    except:
+        pass
+
+    if transitions.has_key(str(distance)) is False:
+        debug("Creating the dynamic levenshtein transitions")
+        transitions[str(distance)] = genTransitions(distance)
+        try:
+            pickle.dump(transitions,open(filename, "w"))
+            debug("The transitions are dumped.")
+        except IOError, e:
+            debug("Was unable to save the generated transitions: " + str(e))
+
+    return transitions[str(distance)]
+            
+
+
+if __name__ == "__main__":
+    try:
+        opts, args = getopt.getopt(sys.argv[1:], "d:e:i:n:ot:v", ["dico-file=", "export=", "iadfa=", "distance=", "oflazer", "transitions-file=", "verbose"])
+    except getopt.GetoptError, e:
+        # print help information and exit:
+        print e
+        usage()
+        sys.exit(2)
+
+    gen = False
+    export = False
+    useFastAlgo = True
+    distance = None
+    transitionsFile = config["transitionsFile"]
+    iadfaFile = config["iadfaFile"]
+    dicoFile = None
+    for o, a in opts:
+        if o in ("-d", "--dico-file"):
+            dicoFile = a
+            
+        if o in ("-e", "--export"):
+            export = True
+            exportFilename = a
+
+        if o in ("-i", "--iadfa"):
+            iadfaFile = a
+
+        if o in ("-n", "--distance"):
+            try:
+                distance = int(a)
+            except:
+                print "The distance given in argument is not a number"
+                usage()
+                sys.exit(2)
+
+        if o in ("-o", "--oflazer"):
+            useFastAlgo = False
+
+        if o in ("-t", "--transitions-file"):
+            transitionsFile = a
+
+        if o in ("-v", "--verbose"):
+            verbose = True
+
+    if dicoFile is not None:
+        a = generateIADFA(dicoFile, iadfaFile)
+    else:
+        try:
+            debug("Loading the FSA from IADFA file")
+            a = pickle.load(open(iadfaFile, "r"))
+        except:
+            print "There's no valid IADFA file. You should Specify one, or " + \
+                  "you should generate config's 'iadfaFile' file."
+            sys.exit(2)
+
+    if distance is not None:
+        if distance <= 0:
+            print "The distance cannot be negative."
+            usage()
+            sys.exit(2)
+
+        if distance > 3:
+            print "You cannot specify a distance greater than 3."
+            usage()
+            sys.exit(2)
+    else:
+        distance = 1
+
+    if export is True:
+        exportFileToPS(a, exportFilename)
+
+    transitionStates = None
+    if len(args) > 0:
+        if useFastAlgo is True:
+            debug("Using Schulz's algoritm")
+            from finenight.fsc import ErrorTolerantRecognizer
+            transitionStates = getTransitionStates(transitionsFile, distance)
+        else:
+            debug("Using Flazer's algorithm")
+            from finenight.et import ErrorTolerantRecognizer
+
+        etr = ErrorTolerantRecognizer(distance, transitionStates)
+        for word in args:
+            print "Starting the recognizer for " + word
+            suggestions = etr.recognize(word,a)
+            print "Suggestions for " + word
+            for suggestion in suggestions:
+                print "  " + suggestion
+    else:
+        debug("No words to be checked.")

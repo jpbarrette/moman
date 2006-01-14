@@ -1,0 +1,6 @@
+(defun copy-hash-table (hash)
+  (let ((h (make-hash-table)))
+    (maphash (lambda (key x)
+	       (setf (gethash key h) x))
+	     hash)
+    h))

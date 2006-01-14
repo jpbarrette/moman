@@ -1,0 +1,9 @@
+Python:
+ - Implement a faster fsa minimization algorithm.
+ - Complete the IncrementalADFA class. 
+ - Implement a 2-degres levenshtein-automata algorithm.
+
+Lisp:
+ - Check if the "I can add the same edge twice" behavior
+   is correct. 
+
