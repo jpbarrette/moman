@@ -34,10 +34,6 @@
     f))
 
 
-(defmethod add-edge (edge (f (eql ())))
-  (break))
-
-
 ;;;This function adds an edge to an FSA.
 ;;;It returns the copy of the FSA.
 (defmethod add-edge (edge (f fsa))

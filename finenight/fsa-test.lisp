@@ -1,4 +1,3 @@
-(load "CLUnit.lisp")
 (load "fsa.lisp")
 
 (defun test-instance-fsa-copy ()
@@ -46,6 +45,5 @@
   :category "FSA add-edge" 
   :test-fn #'nodes-integrity-add-edge)
 
-(run-all-tests nil)
 
 
