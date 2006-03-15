@@ -4,33 +4,33 @@
 
 
 (defstruct fsa
-  states
-  symbols
-  start 
-  finals
-  (nodes (make-hash-table))
+  states ;list of all states
+  alphabet 
+  start ;the starting state
+  finals ;list of final states
+  (nodes (make-hash-table)) ;the mapping from symbol -> states
   :copier copy-fsa)
 
 ;;;This function will copy the FSA.
 ;;;The hash table is a new instance.
 (defun copy-fsa (f)
   (make-fsa :states (copy-list (fsa-states f))
-	    :symbols (copy-list (fsa-symbols f))
+	    :alphabet (copy-list (fsa-alphabet f))
 	    :start (fsa-start f)
 	    :finals (fsa-finals f)
 	    :nodes (copy-hash-table (fsa-nodes f))))
 
 
 ;;;This function build a fsa. 
-;;;The "transitions" argument is a list of 3-tuple. 
+;;;The "edges" argument is a list of 3-tuple. 
 ;;;The "final" argument is a list of vertices.
-(defmethod build-fsa (symbols transitions start finals)
-  (let ((f (make-fsa :symbols (copy-list symbols)
+(defmethod build-fsa (alphabet edges start finals)
+  (let ((f (make-fsa :alphabet (copy-list alphabet)
 		     :start start 
 		     :finals finals)))
-    (mapcar (lambda (x) 
-	      (nadd-edge x f))
-	    transitions)
+    (mapcar (lambda (edge) 
+	      (nadd-edge edge f))
+	    edges)
     f))
 
 
@@ -76,12 +76,6 @@
 ;;;by the id specified.
 (defmethod fsa-node (id fsa)
   (gethash id (fsa-nodes fsa)))
-
-
-;;;This will return the destination state for
-;;;the given input.
-(defmethod transition (node input)
-  (gethash input (node-symbols node)))
 
 
 ;;; This function will write the dot description of the
