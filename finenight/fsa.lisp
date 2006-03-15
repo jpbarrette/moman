@@ -1,5 +1,6 @@
 (load "utils.lisp")
 (load "node.lisp")
+(load "edge.lisp")
 
 
 (defstruct fsa
@@ -14,7 +15,7 @@
 ;;;The hash table is a new instance.
 (defun copy-fsa (f)
   (make-fsa :states (copy-list (fsa-states f))
-	    :symbols (copy-list (fsa-states f))
+	    :symbols (copy-list (fsa-symbols f))
 	    :start (fsa-start f)
 	    :finals (fsa-finals f)
 	    :nodes (copy-hash-table (fsa-nodes f))))
@@ -24,25 +25,29 @@
 ;;;The "transitions" argument is a list of 3-tuple. 
 ;;;The "final" argument is a list of vertices.
 (defmethod build-fsa (symbols transitions start finals)
-  (let ((fsa (make-fsa :symbols (copy-list symbols)
-		       :start start 
-		       :finals finals)))
+  (let ((f (make-fsa :symbols (copy-list symbols)
+		     :start start 
+		     :finals finals)))
     (mapcar (lambda (x) 
-	      (nadd-transition x fsa))
+	      (nadd-edge x f))
 	    transitions)
-    fsa))
+    f))
 
 
-;;;This function adds a transition to an FSA.
-;;;Returns the copy of the FSA.
-(defmethod add-transition (transition (f fsa))
+(defmethod add-edge (edge (f (eql ())))
+  (break))
+
+
+;;;This function adds an edge to an FSA.
+;;;It returns the copy of the FSA.
+(defmethod add-edge (edge (f fsa))
   (let* ((fsa (copy-fsa f))
-	 (src (car transition))
-	 (dst (third transition))
+	 (src (edge-source edge))
+	 (dst (edge-destination edge))
 	 (nodes (fsa-nodes fsa))
 	 (node (gethash src nodes)))
     (setf (gethash src nodes) 
-	  (node-add-transition transition node))
+	  (add-edge edge node))
     (if (null (gethash dst nodes))
 	(setf (gethash dst nodes) (make-node :name dst)))
     fsa))
@@ -51,16 +56,16 @@
 
 ;;;This function adds a transition to an FSA.
 ;;;This function is the destructive version
-;;;of add-transition.
-(defmethod nadd-transition (transition (f fsa))
-  (let* ((src (car transition))
-	 (dst (third transition))
+;;;of add-edge.
+(defmethod nadd-edge (edge (f fsa))
+  (let* ((src (edge-source edge))
+	 (dst (edge-destination edge))
 	 (nodes (fsa-nodes f)))
-    (if (null (gethash dst nodes));dst might not be in FSA
+    (if (null (gethash dst nodes)) ;dst might not be in FSA
 	(add-node (make-node :name dst) f))
-    (if (null (gethash src nodes));src might not be in FSA
+    (if (null (gethash src nodes)) ;src might not be in FSA
 	(add-node (make-node :name src) f))
-    (node-nadd-transition transition (gethash src nodes))
+    (nadd-edge edge (gethash src nodes))
     f))
 
 
@@ -71,17 +76,20 @@
     (if (null (gethash name nodes))
 	(setf (gethash name nodes) node))))
 
-
+;;;This function returns the node identified 
+;;;by the id specified.
 (defmethod fsa-node (id fsa)
   (gethash id (fsa-nodes fsa)))
 
 
-
+;;;This will return the destination state for
+;;;the given input.
 (defmethod transition (node input)
   (gethash input (node-symbols node)))
 
 
-
+;;; This function will write the dot description of the
+;;; FSA in the stream
 (defmethod graphviz-export (stream xsize ysize fsa)
   (progn
     (format stream 

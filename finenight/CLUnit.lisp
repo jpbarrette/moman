@@ -46,12 +46,12 @@
 ;;;;
 
 (defpackage :org.ancar.CLUnit
-	(:use "COMMON-LISP")
+  (:use "COMMON-LISP")
 ;Kill the next form in Corman and Franz Lisps because their defpackage :documentation
 ;option is not present.
-#-(or :cormanlisp excl)
-	(:documentation
-		"This package contains a unit testing environment for Common Lisp.
+  #-(or :cormanlisp excl)
+  (:documentation
+   "This package contains a unit testing environment for Common Lisp.
 		All tests are held in the system image.  Each test has a name and
 		a category.  All tests in the system can be run, as can all tests
 		in a given category.
@@ -79,7 +79,7 @@
 			failed-tests:		Return a list of all tests that failed during the
 								last run-all-tests or run-category call.
 			deftest:			Define a test for the system."))
-		 
+
 (in-package :org.ancar.CLUnit)
 (provide :org.ancar.CLUnit)
 
@@ -90,8 +90,8 @@
 
 (defun print-test (test str depth)
   (declare (ignore depth))
-	(print-unreadable-object (test str :type t :identity t)
-		(format str "~A/~A" (descr test) (category test))))
+  (print-unreadable-object (test str :type t :identity t)
+			   (format str "~A/~A" (descr test) (category test))))
 
 (defstruct (test (:conc-name nil) (:print-function print-test))            
 	
@@ -169,45 +169,39 @@
 	"Return the set of tests that failed during the last test run"
 	*failed-tests*)
 	
-(defun run-tests (tests)
-	"Run the set of tests passed in."
-	(let ((passed-tests nil)
-		  (failed-tests nil))
-		(loop for test in tests do
-			;(format t "~&Running test: ~A~%" test)
-			(let ((test-result (run-protected test)))
-				(if (eq (car test-result) t)
-					(push test passed-tests)
-					(push test failed-tests))))
-		(setf *failed-tests* failed-tests)
-;		(format t "~&Passed tests: ~A; failed tests: ~A.~%"
-;			passed-tests failed-tests)
-		(let ((passed-count (length passed-tests))
-			  (failed-count (length failed-tests)))
-;			(format t "~&Passed count: ~A; failed count: ~A~%"
-;				passed-count failed-count)
-;			(format t "~&~A ~[tests~;test~:;tests~] run; ~A ~[tests~;test~:;tests~] passed; ~A ~[tests~;test~:;tests~] failed.~%"
-;				(+ passed-count failed-count) (+ passed-count failed-count)
-;				passed-count passed-count failed-count failed-count)
-			(format t "~&~A ~A run; ~A ~A passed; ~A ~A failed.~%"
-				(+ passed-count failed-count) (test-or-tests (+ passed-count failed-count))
-				passed-count (test-or-tests passed-count)
-				failed-count (test-or-tests failed-count))
-		(values (null failed-tests) failed-count passed-count))))
+(defun run-tests (tests &optional (protected t))
+  "Run the set of tests passed in."
+  (let ((passed-tests nil)
+	(failed-tests nil))
+    (loop for test in tests do
+	  (let ((test-result (if protected 
+				 (car (run-protected test))
+			       (run-unprotected test))))
+	    (if (eq test-result t)
+		(push test passed-tests)
+	      (push test failed-tests))))
+    (setf *failed-tests* failed-tests)
+    (let ((passed-count (length passed-tests))
+	  (failed-count (length failed-tests)))
+      (format t "~&~A ~A run; ~A ~A passed; ~A ~A failed.~%"
+	      (+ passed-count failed-count) (test-or-tests (+ passed-count failed-count))
+	      passed-count (test-or-tests passed-count)
+	      failed-count (test-or-tests failed-count))
+      (values (null failed-tests) failed-count passed-count))))
 
 (defun filter-tests (category)
-	"Filter tests by category."
-	(remove-if #'(lambda (test) ;(format t "~&~A~A~%" category (category test))
-		(not (string-equal category (category test))))
-		*all-tests*))
+  "Filter tests by category."
+  (remove-if #'(lambda (test) ;(format t "~&~A~A~%" category (category test))
+		 (not (string-equal category (category test))))
+	     *all-tests*))
 
 (defun run-category (category)
 	"Run all the tests in a given category."
 	(run-tests (filter-tests category)))
 
-(defun run-all-tests ()
+(defun run-all-tests (&optional (protected t))
 	"Run all tests in the system."
-	(run-tests *all-tests*))
+	(run-tests *all-tests* protected))
 
 (defmacro form-to-fn (form)
 	"Return a function that will return the form when evaluated.
@@ -249,7 +243,7 @@
 			(when (and ,input-form-present (not ,input-fn-present))
 				(push :input-fn ,mia-args-gen) (push ,ifmfn ,mia-args-gen))				
 			(when ,input-fn-present
-				(push :input-fn ,mia-args-gen) (push ,input-fn ,mia-args-gen))
+			  (push :input-fn ,mia-args-gen) (push ,input-fn ,mia-args-gen))
 			(let ((,inst-gen (apply #'make-test (nreverse ,mia-args-gen))))
                           (remove-test (descr ,inst-gen))
                           (push ,inst-gen *all-tests*)))))
@@ -275,18 +269,15 @@
 				(run-protected test)
 				(run-unprotected test)))))
 
-(export '(
-		run-category
-		run-all-tests
-		clear-tests
-		remove-test
-		deftest
-		list-categories
-		list-tests
-		run-named-test
-		failed-tests
-		;with-supressed-summary
-		))
+(export '(run-category
+	  run-all-tests
+	  clear-tests
+	  remove-test
+	  deftest
+	  list-categories
+	  list-tests
+	  run-named-test
+	  failed-tests ))
 
 (in-package "COMMON-LISP-USER")
 (use-package :org.ancar.CLUnit)
@@ -327,12 +318,12 @@
 
 ;;check error trapping
 (deftest "meta2" :category "CLUnit-meta"
-	:input-fn
-		#'(lambda () (deftest "Error test" :category "CLUnit-pass3"
-						:test-fn #'(lambda ()
-							(remove-test "Error test") (error "Dummy error"))))
-	:test-fn #'(lambda (x) (declare (ignore x)) (run-category "CLUnit-pass3"))
-	:output-fn #'(lambda () (values nil 1 0)))
+  :input-fn
+  #'(lambda () (deftest "Error test" :category "CLUnit-pass3"
+		 :test-fn #'(lambda ()
+			      (remove-test "Error test") (error "Dummy error"))))
+  :test-fn #'(lambda (x) (declare (ignore x)) (run-category "CLUnit-pass3"))
+  :output-fn #'(lambda () (values nil 1 0)))
 
 ;;check input-form
 (deftest "testx" :category "CLUnit"
