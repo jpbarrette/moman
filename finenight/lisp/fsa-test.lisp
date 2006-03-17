@@ -1,4 +1,9 @@
-(load "fsa.lisp")
+(require :com.rrette.finenight.fsa "fsa.lisp")
+(require :org.ancar.CLUnit "CLUnit.lisp")
+
+(in-package :com.rrette.finenight)
+
+(import 'org.ancar.CLUnit::deftest)
 
 (defun test-instance-fsa-copy ()
   (let ((fsa (make-fsa)))
@@ -23,7 +28,7 @@
 (defun nodes-integrity-add-edge ()
   (let* ((fsa1 (build-fsa '(#\a #\b) '((1 #\a 2) (2 #\b 3)) 1 '(3)))
 	(fsa2 (add-edge '(1 #\b 3) fsa1)))
-    (null (transition (fsa-node 1 fsa1) #\b))))
+    (null (transition #\b (fsa-node 1 fsa1)))))
 
 (deftest "Instance not EQ test" 
   :category "FSA copy" 

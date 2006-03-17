@@ -1,30 +1,35 @@
-(defpackage "FINENIGHT"
+(defpackage :com.rrette.finenight
   (:use "COMMON-LISP")
-  (:nicknames "fn")
-  (:export "add-edge"
-	   "nadd-edge"))
+  (:nicknames "finenight")
+  (:export build-node
+	   "nadd-edge"
+	   "transition"
+	   "add-edge"))
 
-(load "utils.lisp")
-(load "edge.lisp")
+(in-package :com.rrette.finenight)
+(provide :com.rrette.finenight.node)
+
+(require :com.rrette.finenight.edge "edge.lisp")
+(require "utils.lisp")
 
 (defstruct node
   name
-  (symbols (make-hash-table))
+  (symbols (make-hash-table :test 'equal))
   edges
   :copier copy-node)
 
 ;;;This function returns a copy of the given node.
 (defun copy-node (node)
   (make-node :name (node-name node)
-	     :symbols (copy-hash-table (node-symbols node))
+	     :symbols (copy-hash-table (node-symbols node) :test 'equal)
 	     :edges (copy-list (node-edges node))))
 
 ;;;This function will return a node built with the edges.
 ;;;The name of the node will be the source of the first edge.
 (defmethod build-node (edges)
-  (step (reduce #'(lambda (node edge)
+  (reduce #'(lambda (node edge)
 		    (add-edge edge node))
-		(cons nil edges))))
+		(cons nil edges)))
   
 
 ;;;This function will return a new node (a copy) with the edge added.
@@ -51,7 +56,9 @@
 
 ;;;This will return the destination state for
 ;;;the given input.
-(defmethod transition (input node)
-  (gethash input (node-symbols node)))
+(defmethod transition (input (node node))
+  (mapcar (lambda (edge)
+	    (edge-destination edge))
+	  (gethash input (node-symbols node))))
 
 

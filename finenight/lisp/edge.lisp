@@ -1,9 +1,12 @@
-(defpackage "FINENIGHT"
+(defpackage :com.rrette.finenight
   (:use "COMMON-LISP")
-  (:nicknames "fn")
-  (:export "EDGE-SOURCE"
-	   "EDGE-SYMBOL"
-	   "EDGE-DESTINATION"))
+  (:nicknames "finenight")
+  (:export "edge-source"
+	   "edge-symbol"
+	   "edge-destination"))
+
+(in-package :com.rrette.finenight)
+(provide :com.rrette.finenight.edge)
 
 (defstruct edge
   src

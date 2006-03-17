@@ -1,4 +1,8 @@
-(load "edge.lisp")
+(require :org.ancar.CLUnit "CLUnit.lisp")
+(require :com.rrette.finenight.edge "edge.lisp")
+
+(in-package :com.rrette.finenight)
+(import 'org.ancar.CLUnit::deftest)
 
 (defun test-source ()
   (and (equal (edge-source '(1 "b" 4)) 1)

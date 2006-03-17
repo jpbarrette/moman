@@ -1,5 +1,5 @@
-(defun copy-hash-table (hash)
-  (let ((h (make-hash-table)))
+(defun copy-hash-table (hash &key (test 'eql)) 
+  (let ((h (make-hash-table :test test)))
     (maphash (lambda (key x)
 	       (setf (gethash key h) x))
 	     hash)

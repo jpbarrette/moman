@@ -1,7 +1,16 @@
-(load "utils.lisp")
-(load "node.lisp")
-(load "edge.lisp")
+(defpackage :com.rrette.finenight
+  (:use "COMMON-LISP")
+  (:nicknames "finenight")
+  (:export "add-edge"
+	   "build-fsa"
+	   "nadd-edge"
+	   "transition"))
 
+(in-package :com.rrette.finenight)
+(provide :com.rrette.finenight.fsa)
+
+(require :node)
+(load "utils.lisp")
 
 (defstruct fsa
   states ;list of all states
@@ -50,7 +59,7 @@
 
 
 
-;;;This function adds a transition to an FSA.
+;;;This function adds a node to an FSA.
 ;;;This function is the destructive version
 ;;;of add-edge.
 (defmethod nadd-edge (edge (f fsa))
