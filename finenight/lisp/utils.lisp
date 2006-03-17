@@ -4,3 +4,10 @@
 	       (setf (gethash key h) x))
 	     hash)
     h))
+
+
+(defun equal-set (rhs lhs)
+  (and (eql (list-length lhs)
+	    (list-length rhs))
+       (tailp lhs rhs)))
+
