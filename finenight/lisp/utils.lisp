@@ -9,5 +9,7 @@
 (defun equal-set (rhs lhs)
   (and (eql (list-length lhs)
 	    (list-length rhs))
-       (tailp lhs rhs)))
-
+       (reduce (lambda (ok node)
+		 (if ok
+		     (not (null (member node rhs)))))
+		 (cons t lhs))))

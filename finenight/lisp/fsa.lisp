@@ -96,24 +96,29 @@
 	    xsize 
 	    ysize)
     (format stream "  rotate = 90;~%")
-    (if (not (null (fsa-final fsa)))
+    (if (not (null (fsa-finals fsa)))
 	(progn 
 	  (format stream "~%  node [shape = doublecircle];~% ")
 	  (mapcar (lambda (x) 
 		    (format stream " \"~A\"" x))
-		  (fsa-final fsa))))
+		  (fsa-finals fsa))))
     (format stream ";~%~%  node [shape = circle];~% ")
     (maphash (lambda (key node)
 	       (format stream " \"~A\"" (node-name node)))
 	     (fsa-nodes fsa))
     (format stream ";~%~%")
     (maphash (lambda (key node)
-	       (maphash (lambda (key dst)
-			  (format stream "  \"~A\" -> \"~A\" [label = \"~A\"];~%" 
-				  (node-name node) dst key))
-			(node-symbols node)))
+	       (mapcar (lambda (edge)
+			 (format stream "  \"~A\" -> \"~A\" [label = \"~A\"];~%" 
+				 (edge-source edge)
+				 (edge-destination edge)
+				 (if (null (edge-symbol edge))
+				     "epsilon"
+				   (edge-symbol edge))))
+		       (node-edges node)))
 	     (fsa-nodes fsa))
-    (format stream "}~%")))
+    (format stream "}~%")
+    fsa))
   
 
 

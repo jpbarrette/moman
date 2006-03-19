@@ -16,12 +16,14 @@
   name
   (symbols (make-hash-table :test 'equal))
   edges
+  epsilons
   :copier copy-node)
 
 ;;;This function returns a copy of the given node.
 (defun copy-node (node)
   (make-node :name (node-name node)
 	     :symbols (copy-hash-table (node-symbols node) :test 'equal)
+	     :epsilons (copy-list (node-epsilons node))
 	     :edges (copy-list (node-edges node))))
 
 ;;;This function will return a node built with the edges.
@@ -50,15 +52,18 @@
 	(source (edge-source edge))
 	(edges (node-edges n)))
     (setf (node-edges n) (cons edge edges))
-    (setf (gethash (edge-symbol edge) symbols) 
-	  (cons edge (gethash (edge-symbol edge) symbols)))
+    (if (null (edge-symbol edge))
+	(setf (node-epsilons n) (cons edge (node-epsilons n)))
+      (setf (gethash (edge-symbol edge) symbols) 
+	    (cons edge (gethash (edge-symbol edge) symbols))))
     n))
 
 ;;;This will return the destination state for
 ;;;the given input.
 (defmethod transition (input (node node))
-  (mapcar (lambda (edge)
-	    (edge-destination edge))
-	  (gethash input (node-symbols node))))
+  (let ((edges (gethash input (node-symbols node))))
+    (mapcar (lambda (edge)
+	      (edge-destination edge))
+	    (append (node-epsilons node) edges))))
 
 
