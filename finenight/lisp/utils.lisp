@@ -13,3 +13,11 @@
 		 (if ok
 		     (not (null (member node rhs)))))
 		 (cons t lhs))))
+
+(defun uniqueness-set (set)
+  (if (null set)
+      nil
+    (if (member (car set) (cdr set))
+	(uniqueness-set (cdr set))
+      (cons (car set) (uniqueness-set (cdr set))))))
+	    

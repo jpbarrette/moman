@@ -58,12 +58,19 @@
 	    (cons edge (gethash (edge-symbol edge) symbols))))
     n))
 
+;;;This will return the epsilons of this state
+(defmethod e-close ((node node))
+  (uniqueness-set (mapcar (lambda (edge)
+			    (edge-destination edge))
+			  (node-epsilons node))))
+
+
 ;;;This will return the destination state for
 ;;;the given input.
 (defmethod transition (input (node node))
-  (let ((edges (gethash input (node-symbols node))))
-    (mapcar (lambda (edge)
-	      (edge-destination edge))
-	    (append (node-epsilons node) edges))))
+  (uniqueness-set
+   (mapcar (lambda (edge)
+	     (edge-destination edge))
+	   (gethash input (node-symbols node)))))
 
 

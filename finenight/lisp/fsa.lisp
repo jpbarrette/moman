@@ -87,6 +87,9 @@
   (gethash id (fsa-nodes fsa)))
 
 
+;;;(defmethod transition (input (fsa fsa))
+  
+
 ;;; This function will write the dot description of the
 ;;; FSA in the stream
 (defmethod graphviz-export (stream xsize ysize fsa)
