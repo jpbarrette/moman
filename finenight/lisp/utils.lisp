@@ -1,3 +1,13 @@
+(defpackage :com.rrette.finenight
+  (:use "COMMON-LISP")
+  (:nicknames "finenight")
+  (:export "copy-hash-table"
+	   "equal-set"
+	   "uniqueness-set"))
+
+(in-package :com.rrette.finenight)
+(provide :com.rrette.finenight.utils)
+
 (defun copy-hash-table (hash &key (test 'eql)) 
   (let ((h (make-hash-table :test test)))
     (maphash (lambda (key x)

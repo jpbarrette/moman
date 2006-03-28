@@ -28,7 +28,18 @@
 (defun nodes-integrity-add-edge ()
   (let* ((fsa1 (build-fsa '(#\a #\b) '((1 #\a 2) (2 #\b 3)) 1 '(3)))
 	(fsa2 (add-edge '(1 #\b 3) fsa1)))
-    (null (transition #\b (fsa-node 1 fsa1)))))
+    (null (transition #\b 1 fsa1))))
+
+(defun transition-fsa-without-node ()
+    (null (transition #\b 1 my-fsa)))
+
+(defun transition-simple ()
+  (and (null (transition #\b 'a my-fsa))
+       (equal-set (transition "b" 'a my-fsa) '(b))
+       (equal-set (transition "c" 'a my-fsa) '(d c))))
+
+
+(load :fsa-dat)
 
 (deftest "Instance not EQ test" 
   :category "FSA copy" 
@@ -50,5 +61,13 @@
   :category "FSA add-edge" 
   :test-fn #'nodes-integrity-add-edge)
 
+
+(deftest "FSA Simple Transition" 
+  :category "FSA transitions" 
+  :test-fn #'transition-simple)
+
+(deftest "FSA Transition without node" 
+  :category "FSA transitions" 
+  :test-fn #'transition-fsa-without-node)
 
 

@@ -9,8 +9,8 @@
 (in-package :com.rrette.finenight)
 (provide :com.rrette.finenight.fsa)
 
-(require :node)
-(load "utils.lisp")
+(require :com.rrette.finenight.node "node.lisp")
+(require :com.rrette.finenight.utils "utils.lisp")
 
 (defstruct fsa
   states ;list of all states
@@ -30,10 +30,10 @@
 	    :nodes (copy-hash-table (fsa-nodes f))))
 
 
-;;;This function build a fsa. 
-;;;The "edges" argument is a list of 3-tuple. 
-;;;The "final" argument is a list of vertices.
 (defmethod build-fsa (alphabet edges start finals)
+  "This function build a fsa. 
+The 'edges' argument is a list of 3-tuple. 
+The 'final' argument is a list of vertices."
   (let ((f (make-fsa :alphabet (copy-list alphabet)
 		     :start start 
 		     :finals finals)))
@@ -74,8 +74,8 @@
     f))
 
 
-;;;This function add a node to the FSA.
 (defun add-node (node fsa)
+  "This function add a node to the copy of the FSA"
   (let ((name (node-name node))
 	(nodes (fsa-nodes fsa)))
     (if (null (gethash name nodes))
@@ -84,15 +84,34 @@
 ;;;This function returns the node identified 
 ;;;by the id specified.
 (defmethod fsa-node (id fsa)
+  "This function returns the node identified by the id specified."
   (gethash id (fsa-nodes fsa)))
 
+(defmethod transition (input id fsa)
+  (let ((node (fsa-node id fsa)))
+    (if (null node)
+	nil
+      (e-close-nodes 
+       (reduce (lambda (nodes-id src) 
+		 (append nodes-id (node-transition input (fsa-node src fsa))))
+	       (cons nil (cons id (e-close node))))
+       fsa))))
 
-;;;(defmethod transition (input (fsa fsa))
-  
+(defmethod transition (input (ids cons) fsa)
+  (uniqueness-set (reduce (lambda (result id)
+			    (append result (transition input id fsa)))
+			  (cons nil
+			    
+			    
 
-;;; This function will write the dot description of the
-;;; FSA in the stream
+(defmethod e-close-nodes (nodes-id fsa)
+  (uniqueness-set (append nodes-id
+			  (reduce (lambda (nodes-id src)
+				    (append nodes-id (e-close (fsa-node src fsa))))
+				  (cons nil nodes-id)))))
+
 (defmethod graphviz-export (stream xsize ysize fsa)
+  "This function will write the dot description of the FSA in the stream."
   (progn
     (format stream 
 	    "digraph G {~%  rankdir = LR;~%  size = \"~A, ~A\";~%" 

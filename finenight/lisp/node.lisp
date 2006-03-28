@@ -1,16 +1,16 @@
 (defpackage :com.rrette.finenight
   (:use "COMMON-LISP")
   (:nicknames "finenight")
-  (:export build-node
+  (:export "node-transition"
+	   "build-node"
 	   "nadd-edge"
-	   "transition"
 	   "add-edge"))
 
 (in-package :com.rrette.finenight)
 (provide :com.rrette.finenight.node)
 
 (require :com.rrette.finenight.edge "edge.lisp")
-(require "utils.lisp")
+(require :com.rrette.finenight.utils "utils.lisp")
 
 (defstruct node
   name
@@ -64,10 +64,9 @@
 			    (edge-destination edge))
 			  (node-epsilons node))))
 
-
 ;;;This will return the destination state for
 ;;;the given input.
-(defmethod transition (input (node node))
+(defmethod node-transition (input (node node))
   (uniqueness-set
    (mapcar (lambda (edge)
 	     (edge-destination edge))

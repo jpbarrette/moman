@@ -1,9 +1,7 @@
-(load "CLUnit.lisp")
+(require :com.rrette.finenight.fsa :fsa)
 
-(load "fsa.lisp")
-
-(load "edge-test.lisp")
 (load "node-test.lisp")
+(load "edge-test.lisp")
 (load "fsa-test.lisp")
 
 (run-all-tests)
