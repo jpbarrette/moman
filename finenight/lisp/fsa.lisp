@@ -98,17 +98,17 @@ The 'final' argument is a list of vertices."
        fsa))))
 
 (defmethod transition (input (ids cons) fsa)
-  (uniqueness-set (reduce (lambda (result id)
-			    (append result (transition input id fsa)))
-			  (cons nil
+  (uniqueness-set (mapcan (lambda (id)
+			    (transition input id fsa))
+			  ids)))
 			    
 			    
 
 (defmethod e-close-nodes (nodes-id fsa)
   (uniqueness-set (append nodes-id
-			  (reduce (lambda (nodes-id src)
-				    (append nodes-id (e-close (fsa-node src fsa))))
-				  (cons nil nodes-id)))))
+			  (mapcan (lambda (src)
+				    (e-close (fsa-node src fsa)))
+				  nodes-id))))
 
 (defmethod graphviz-export (stream xsize ysize fsa)
   "This function will write the dot description of the FSA in the stream."
