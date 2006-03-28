@@ -92,9 +92,9 @@ The 'final' argument is a list of vertices."
     (if (null node)
 	nil
       (e-close-nodes 
-       (reduce (lambda (nodes-id src) 
-		 (append nodes-id (node-transition input (fsa-node src fsa))))
-	       (cons nil (cons id (e-close node))))
+       (mapcan (lambda (src) 
+		 (node-transition input (fsa-node src fsa)))
+	       (cons id (e-close node)))
        fsa))))
 
 (defmethod transition (input (ids cons) fsa)
