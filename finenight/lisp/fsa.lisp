@@ -104,6 +104,14 @@ The 'final' argument is a list of vertices."
   (uniqueness-set (mapcan (lambda (id)
 			    (transition input id fsa))
 			  ids)))
+
+(defmethod e-transition (word fsa)
+  (let ((nodes (cons (fsa-start fsa) nil)))
+    (reduce (lambda (ids input)
+	      (transition (string input) ids fsa))
+	    word
+	    :initial-value nodes)))
+    
 			    
 
 (defmethod graphviz-export (stream xsize ysize fsa)

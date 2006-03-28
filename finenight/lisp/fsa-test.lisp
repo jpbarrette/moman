@@ -38,7 +38,6 @@
        (equal-set (transition "b" 'a my-fsa) '(b))
        (equal-set (transition "c" 'a my-fsa) '(d c))))
 
-
 (load :fsa-dat)
 
 (deftest "Instance not EQ test" 
@@ -70,4 +69,6 @@
   :category "FSA transitions" 
   :test-fn #'transition-fsa-without-node)
 
-
+(deftest "FSA Extended Transition"
+  :category "FSA transitions"
+  :test-fn #'transition-extended)
