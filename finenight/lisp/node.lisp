@@ -73,7 +73,7 @@
   (uniqueness-set
    (mapcar (lambda (edge)
 	     (edge-destination edge))
-	   (gethash input (node-symbols node)))))
+	   (gethash (string input) (node-symbols node)))))
 
 (defmethod node-transition (input node)
   nil)
