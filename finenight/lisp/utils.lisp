@@ -31,3 +31,11 @@
 	(uniqueness-set (cdr set))
       (cons (car set) (uniqueness-set (cdr set))))))
 	    
+
+(defun create-name-generator ()
+  (let ((index 0))
+    #'(lambda ()
+	(progn 
+	  (setf result (format nil "q~A" index))
+	  (setf index (+ index 1))
+	  result))))

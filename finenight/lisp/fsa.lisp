@@ -106,6 +106,7 @@ The 'final' argument is a list of vertices."
 			  ids)))
 
 (defmethod e-transition (word fsa)
+  "This is the extended transition function for the FSA."
   (let ((nodes (cons (fsa-start fsa) nil)))
     (reduce (lambda (ids input)
 	      (transition (string input) ids fsa))
@@ -113,6 +114,7 @@ The 'final' argument is a list of vertices."
 	    :initial-value nodes)))
     
 (defmethod accepts (word fsa)
+  "This function returns true if the word is accepted by the FSA."
   (some (lambda (node)
 	  (if (member node (fsa-finals fsa))
 	      t))

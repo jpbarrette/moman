@@ -1,5 +1,10 @@
-(load "CLUnit.lisp")
-(load "utils.lisp")
+(require :com.rrette.finenight.utils "utils.lisp")
+(require :org.ancar.CLUnit "CLUnit.lisp")
+
+(in-package :com.rrette.finenight)
+
+(import 'org.ancar.CLUnit::deftest)
+
 
 (defun test-identity-copy-hash ()
   (let* ((hash (make-hash-table
@@ -19,7 +24,15 @@
 	 (hash-copy (copy-hash-table hash)))
     (setf (gethash "d" hash-copy) 4)
     (not (equalp hash hash-copy))))
-  
+
+(defun test-generator ()
+  (progn
+    (setf (symbol-function 'generator)  (create-name-generator))
+    (and (equal (generator) "q0")
+	 (equal (generator) "q1")
+	 (equal (generator) "q2")
+	 (equal (generator) "q3"))))
+	 
 
 
 
@@ -36,4 +49,6 @@
   :category "Hash copy"
   :test-fn #'test-inequality)
 
-(run-all-tests)
+(deftest "Name generator test"
+  :test-fn #'test-generator)
+
