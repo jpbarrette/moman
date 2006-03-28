@@ -112,7 +112,11 @@ The 'final' argument is a list of vertices."
 	    word
 	    :initial-value nodes)))
     
-			    
+(defmethod accepts (word fsa)
+  (some (lambda (node)
+	  (if (member node (fsa-finals fsa))
+	      t))
+	  (e-transition word fsa)))
 
 (defmethod graphviz-export (stream xsize ysize fsa)
   "This function will write the dot description of the FSA in the stream."

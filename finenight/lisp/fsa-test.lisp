@@ -38,6 +38,18 @@
        (equal-set (transition "b" 'a my-fsa) '(b))
        (equal-set (transition "c" 'a my-fsa) '(d c))))
 
+(defun transition-extended ()
+  (and (null (e-transition "a" my-fsa))
+       (null (e-transition "da" my-fsa))
+       (equal-set (e-transition "bc" my-fsa) '(d c))
+       (equal-set (e-transition "d" my-fsa) '(d))))
+
+(defun test-accepts ()
+  (and (not (accepts "a" my-fsa))
+       (not (accepts "da" my-fsa))
+       (accepts "bc" my-fsa)
+       (accepts "d" my-fsa)))
+
 (load :fsa-dat)
 
 (deftest "Instance not EQ test" 
@@ -72,3 +84,7 @@
 (deftest "FSA Extended Transition"
   :category "FSA transitions"
   :test-fn #'transition-extended)
+
+(deftest "FSA Accepts"
+  :category "FSA transitions"
+  :test-fn #'test-accepts)
