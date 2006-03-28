@@ -64,6 +64,9 @@
 			    (edge-destination edge))
 			  (node-epsilons node))))
 
+(defmethod e-close (node)
+  nil)
+
 ;;;This will return the destination state for
 ;;;the given input.
 (defmethod node-transition (input (node node))
@@ -72,4 +75,5 @@
 	     (edge-destination edge))
 	   (gethash input (node-symbols node)))))
 
-
+(defmethod node-transition (input node)
+  nil)

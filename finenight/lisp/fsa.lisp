@@ -20,9 +20,9 @@
   (nodes (make-hash-table)) ;the mapping from symbol -> states
   :copier copy-fsa)
 
-;;;This function will copy the FSA.
-;;;The hash table is a new instance.
 (defun copy-fsa (f)
+  "This function will copy the FSA.
+The hash table is a new instance."
   (make-fsa :states (copy-list (fsa-states f))
 	    :alphabet (copy-list (fsa-alphabet f))
 	    :start (fsa-start f)
@@ -43,9 +43,8 @@ The 'final' argument is a list of vertices."
     f))
 
 
-;;;This function adds an edge to an FSA.
-;;;It returns the copy of the FSA.
 (defmethod add-edge (edge (f fsa))
+  "This function adds an edge to a copy of the FSA."
   (let* ((fsa (copy-fsa f))
 	 (src (edge-source edge))
 	 (dst (edge-destination edge))
@@ -87,28 +86,25 @@ The 'final' argument is a list of vertices."
   "This function returns the node identified by the id specified."
   (gethash id (fsa-nodes fsa)))
 
+(defmethod e-close-nodes (nodes-id fsa)
+  (uniqueness-set (append nodes-id
+			  (mapcan (lambda (src)
+				    (e-close (fsa-node src fsa)))
+				  nodes-id))))
+
 (defmethod transition (input id fsa)
   (let ((node (fsa-node id fsa)))
-    (if (null node)
-	nil
       (e-close-nodes 
        (mapcan (lambda (src) 
 		 (node-transition input (fsa-node src fsa)))
 	       (cons id (e-close node)))
-       fsa))))
+       fsa)))
 
 (defmethod transition (input (ids cons) fsa)
   (uniqueness-set (mapcan (lambda (id)
 			    (transition input id fsa))
 			  ids)))
 			    
-			    
-
-(defmethod e-close-nodes (nodes-id fsa)
-  (uniqueness-set (append nodes-id
-			  (mapcan (lambda (src)
-				    (e-close (fsa-node src fsa)))
-				  nodes-id))))
 
 (defmethod graphviz-export (stream xsize ysize fsa)
   "This function will write the dot description of the FSA in the stream."
