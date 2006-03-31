@@ -25,5 +25,21 @@
 		      'a
 		      '(d)))
 
+(defun my-test ()
+  (build-fsa '()
+	     '((a "b" b)
+	       (a nil b)
+	       (a "d" d)
+	       (a "d" d)
+	       (b "c" c)
+	       (a "e" e)
+	       (b "é" c)
+	       (c "d" d)
+	       (c nil d)
+	       (c nil c))
+	     'a
+	     '(d)))
+  
+
 ;(graphviz-export t 8.5 11 my-fsa)
 	     

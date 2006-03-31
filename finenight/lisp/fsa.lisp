@@ -20,6 +20,14 @@
   (nodes (make-hash-table)) ;the mapping from symbol -> states
   :copier copy-fsa)
 
+(defmethod is-final (label fsa)
+  (if (member label (fsa-finals fsa))
+      t))
+
+(defmethod is-final ((node node) fsa)
+  (if (member (node-name node) (fsa-finals fsa))
+      t))
+
 (defun copy-fsa (f)
   "This function will copy the FSA.
 The hash table is a new instance."
@@ -28,6 +36,20 @@ The hash table is a new instance."
 	    :start (fsa-start f)
 	    :finals (fsa-finals f)
 	    :nodes (copy-hash-table (fsa-nodes f))))
+
+(defun has-node (label fsa)
+  (not (null (gethash label (fsa-nodes fsa)))))
+
+
+(defun check-fsa (fsa)
+  (progn 
+    (if (not (has-node (fsa-start fsa) fsa))
+	(add-node (make-node :name (fsa-start fsa)) fsa))
+    (mapcar (lambda (label)
+	      (if (not (has-node label fsa))
+		  (add-node (make-node :name label))))
+	    (fsa-finals fsa))
+    fsa))
 
 
 (defmethod build-fsa (alphabet edges start finals)
@@ -40,7 +62,7 @@ The 'final' argument is a list of vertices."
     (mapcar (lambda (edge) 
 	      (nadd-edge edge f))
 	    edges)
-    f))
+    (check-fsa f)))
 
 
 (defmethod add-edge (edge (f fsa))
@@ -72,6 +94,37 @@ The 'final' argument is a list of vertices."
     (nadd-edge edge (gethash src nodes))
     f))
 
+(defmethod nremove-edge (edge (fsa fsa))
+  (let ((node (fsa-node (edge-source edge) fsa)))
+    (if node
+	(progn 
+	  (nremove-edge edge node)
+	  (if (is-final node fsa)
+	      (setf (fsa-finals fsa) 
+		    (remove (node-name node) (fsa-finals fsa))))))
+    fsa))
+	
+(defmethod is-accessible (label fsa)
+  (let ((accessors nil))
+    (maphash (lambda (key node)
+	       (if (node-access label node)
+		   (setf accessors (cons (node-name node) accessors))))
+	     (fsa-nodes fsa))
+    accessors))
+	     
+
+(defmethod is-accessible ((node node) fsa)
+  (is-accessible (node-name node) fsa))
+
+(defmethod nremove-node ((node node) fsa)
+  (nremove-node (node-name node) fsa))
+
+(defmethod nremove-node (label fsa)
+  (progn
+    (setf (fsa-finals fsa) 
+	  (remove label (fsa-finals fsa)))
+    (remhash label (fsa-nodes fsa))
+    fsa))
 
 (defun add-node (node fsa)
   "This function add a node to the copy of the FSA"
@@ -120,7 +173,23 @@ The 'final' argument is a list of vertices."
 	      t))
 	  (e-transition word fsa)))
 
-(defmethod graphviz-export (stream xsize ysize fsa)
+(defmethod graphviz-export (fsa &key (file nil) (xsize 8) (ysize 11))
+  "This function will write the dot description of the FSA in the stream."
+  (progn
+    (if (null file)
+	(graphviz-export-stream fsa :stream t :xsize xsize :ysize ysize)
+      (with-open-file (stream 
+		       file 
+		       :direction :output 
+		       :if-exists :supersede
+		       :if-does-not-exist :create)
+		      (graphviz-export-stream fsa 
+					      :stream stream
+					      :xsize xsize
+					      :ysize ysize)))))
+
+
+(defmethod graphviz-export-stream (fsa &key (stream t) (xsize 8) (ysize 11))
   "This function will write the dot description of the FSA in the stream."
   (progn
     (format stream 

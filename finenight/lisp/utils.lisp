@@ -3,7 +3,8 @@
   (:nicknames "finenight")
   (:export "copy-hash-table"
 	   "equal-set"
-	   "uniqueness-set"))
+	   "uniqueness-set"
+	   "generate-name"))
 
 (in-package :com.rrette.finenight)
 (provide :com.rrette.finenight.utils)
@@ -14,6 +15,30 @@
 	       (setf (gethash key h) x))
 	     hash)
     h))
+
+;; (defun hash-values (hash)
+;;   (let ((values nil))
+;;     (with-hash-table-iterator
+;;      (my-iterator hash)
+;;      (loop
+;;       (multiple-value-bind (entry-p key value)
+;; 			   (my-iterator)
+;; 			   (if entry-p
+;; 			       (setf values (cons value values))
+;; 			     (return)))))
+;;     values))
+
+;; (defun hash-keys (hash)
+;;   (let ((keys nil))
+;;     (with-hash-table-iterator
+;;      (my-iterator hash)
+;;      (loop
+;;       (multiple-value-bind (entry-p key value)
+;; 			   (my-iterator)
+;; 			   (if entry-p
+;; 			       (setf keys (cons key keys))
+;; 			     (return)))))
+;;     keys))
 
 
 (defun equal-set (rhs lhs)
@@ -32,10 +57,5 @@
       (cons (car set) (uniqueness-set (cdr set))))))
 	    
 
-(defun create-name-generator ()
-  (let ((index 0))
-    #'(lambda ()
-	(progn 
-	  (setf result (format nil "q~A" index))
-	  (setf index (+ index 1))
-	  result))))
+(defun generate-name (index)
+  (format nil "q~A" index))

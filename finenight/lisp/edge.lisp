@@ -43,6 +43,13 @@
 (defmethod edge-destination (e)
   (nth 2 e))
 
+
+(defun edgify (edge)
+  (list (edge-source edge)
+	(if (edge-symbol edge)
+	    (string (edge-symbol edge)))
+	(edge-destination edge)))
+
 ;;; This function returns the destination state identification
 ;;; of this edge.
 (defmethod edge-destination ((e edge))

@@ -25,17 +25,6 @@
     (setf (gethash "d" hash-copy) 4)
     (not (equalp hash hash-copy))))
 
-(defun test-generator ()
-  (progn
-    (setf (symbol-function 'generator)  (create-name-generator))
-    (and (equal (generator) "q0")
-	 (equal (generator) "q1")
-	 (equal (generator) "q2")
-	 (equal (generator) "q3"))))
-	 
-
-
-
 (deftest "Hash copy instance not EQ test" 
   :category "Hash copy" 
   :test-fn #'test-identity-copy-hash)
@@ -48,7 +37,4 @@
 (deftest "Hash copy and add inequality test"
   :category "Hash copy"
   :test-fn #'test-inequality)
-
-(deftest "Name generator test"
-  :test-fn #'test-generator)
 

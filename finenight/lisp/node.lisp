@@ -12,6 +12,7 @@
 (require :com.rrette.finenight.edge "edge.lisp")
 (require :com.rrette.finenight.utils "utils.lisp")
 
+
 (defstruct node
   name
   (symbols (make-hash-table :test 'equal))
@@ -19,26 +20,31 @@
   epsilons
   :copier copy-node)
 
-;;;This function returns a copy of the given node.
+(defmethod node-access (label (node node))
+  (some (lambda (edge)
+	  (if (equal (edge-destination edge)
+		     label)
+	      t))))
+
 (defun copy-node (node)
   (make-node :name (node-name node)
 	     :symbols (copy-hash-table (node-symbols node) :test 'equal)
 	     :epsilons (copy-list (node-epsilons node))
 	     :edges (copy-list (node-edges node))))
 
+
 ;;;This function will return a node built with the edges.
 ;;;The name of the node will be the source of the first edge.
 (defmethod build-node (edges)
   (reduce #'(lambda (node edge)
 		    (add-edge edge node))
-		(cons nil edges)))
+	  edges
+	  :initial-value (make-node)))
   
 
 ;;;This function will return a new node (a copy) with the edge added.
 (defmethod add-edge (edge (node node))
-  (let ((n (copy-node node)))
-    (nadd-edge edge n)
-    n))
+  (nadd-edge edge (copy-node node)))
 
 ;;;This function will return a new node with the edge added.
 ;;;The name of the node will be the source of the edge.
@@ -48,15 +54,28 @@
    
 ;;;This function will add an edge to the current node
 (defmethod nadd-edge (edge (n node))
-  (let ((symbols (node-symbols n))
-	(source (edge-source edge))
-	(edges (node-edges n)))
+  (let* ((edge (edgify edge))
+	 (symbols (node-symbols n))
+	 (edges (node-edges n)))
     (setf (node-edges n) (cons edge edges))
     (if (null (edge-symbol edge))
 	(setf (node-epsilons n) (cons edge (node-epsilons n)))
-      (setf (gethash (edge-symbol edge) symbols) 
-	    (cons edge (gethash (edge-symbol edge) symbols))))
+      (setf (gethash (string (edge-symbol edge)) symbols) 
+	    (cons edge (gethash (string (edge-symbol edge)) symbols))))
     n))
+
+(defmethod nremove-edge (edge (node node))
+  (progn
+    (setf (node-edges node) (remove (edgify edge) (node-edges node) :test #'equal))
+    (setf (gethash (edge-symbol edge) (node-symbols node))
+	  (remove (edgify edge) (gethash (edge-symbol edge) (node-symbols node)) :test #'equal))
+    node))
+
+(defmethod remove-edge (edge (node node))
+  (let ((n (copy-node node)))
+    (nremove-edge edge n)
+    n))
+
 
 ;;;This will return the epsilons of this state
 (defmethod e-close ((node node))
@@ -64,7 +83,7 @@
 			    (edge-destination edge))
 			  (node-epsilons node))))
 
-(defmethod e-close (node)
+(defmethod e-close ((ignore node))
   nil)
 
 ;;;This will return the destination state for
@@ -77,3 +96,14 @@
 
 (defmethod node-transition (input node)
   nil)
+
+
+(defun are-equivalent (lhs-label rhs-label fsa)
+  "Returns nil if they are not equivalent, return the rhs-label otherwise"
+  (let ((lhs (fsa-node lhs-label fsa))
+	(rhs (fsa-node rhs-label fsa)))
+    (if (and (equal (is-final lhs-label fsa)
+		    (is-final rhs-label fsa))
+	     (equal-set (node-edges lhs)
+			(node-edges rhs)))
+	rhs-label)))
