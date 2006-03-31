@@ -88,8 +88,7 @@
 
 (defun replace-or-register (last-state iadfa)
   (let* ((fsa (iadfa-fsa iadfa))
-	 (child (last-child (fsa-node last-state fsa)))
-	 (register (iadfa-register iadfa)))
+	 (child (last-child (fsa-node last-state fsa))))
     (if (marked-as-registered child iadfa)
 	iadfa
       (progn

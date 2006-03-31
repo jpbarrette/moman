@@ -97,13 +97,26 @@
 (defmethod node-transition (input node)
   nil)
 
+(defun edges-are-equivalent (lhs-edges rhs-edges)
+  (and (equal (length lhs-edges)
+	      (length rhs-edges))
+       (every (lambda (lhs-edge rhs-edge)
+		(equal (cdr lhs-edge)
+			   (cdr rhs-edge)))
+	      lhs-edges 
+	      rhs-edges)))
 
 (defun are-equivalent (lhs-label rhs-label fsa)
+  (if (and (equal rhs-label "q6") (equal lhs-label "q14"))
+      (step (real-are-equivalent lhs-label rhs-label fsa))
+    (real-are-equivalent lhs-label rhs-label fsa)))
+
+(defun real-are-equivalent (lhs-label rhs-label fsa)
   "Returns nil if they are not equivalent, return the rhs-label otherwise"
   (let ((lhs (fsa-node lhs-label fsa))
 	(rhs (fsa-node rhs-label fsa)))
     (if (and (equal (is-final lhs-label fsa)
 		    (is-final rhs-label fsa))
-	     (equal-set (node-edges lhs)
-			(node-edges rhs)))
+	     (edges-are-equivalent (node-edges lhs)
+				   (node-edges rhs)))
 	rhs-label)))
