@@ -20,11 +20,11 @@
   epsilons
   :copier copy-node)
 
-(defmethod node-access (label (node node))
-  (some (lambda (edge)
-	  (if (equal (edge-destination edge)
-		     label)
-	      t))))
+;; (defmethod node-access (label (node node))
+;;   (some (lambda (edge)
+;; 	  (if (equal (edge-destination edge)
+;; 		     label)
+;; 	      t))))
 
 (defun copy-node (node)
   (make-node :name (node-name node)
@@ -107,11 +107,6 @@
 	      rhs-edges)))
 
 (defun are-equivalent (lhs-label rhs-label fsa)
-  (if (and (equal rhs-label "q6") (equal lhs-label "q14"))
-      (step (real-are-equivalent lhs-label rhs-label fsa))
-    (real-are-equivalent lhs-label rhs-label fsa)))
-
-(defun real-are-equivalent (lhs-label rhs-label fsa)
   "Returns nil if they are not equivalent, return the rhs-label otherwise"
   (let ((lhs (fsa-node lhs-label fsa))
 	(rhs (fsa-node rhs-label fsa)))
