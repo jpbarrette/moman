@@ -14,17 +14,12 @@
 
 
 (defstruct node
+  (:copier nil)
   name
   (symbols (make-hash-table :test 'equal))
   edges
-  epsilons
-  :copier copy-node)
+  epsilons)
 
-;; (defmethod node-access (label (node node))
-;;   (some (lambda (edge)
-;; 	  (if (equal (edge-destination edge)
-;; 		     label)
-;; 	      t))))
 
 (defun copy-node (node)
   (make-node :name (node-name node)
@@ -83,7 +78,8 @@
 			    (edge-destination edge))
 			  (node-epsilons node))))
 
-(defmethod e-close ((ignore node))
+(defmethod e-close (node)
+  (declare (ignore node))
   nil)
 
 ;;;This will return the destination state for
@@ -95,7 +91,8 @@
 	   (gethash (string input) (node-symbols node)))))
 
 (defmethod node-transition (input node)
-  nil)
+    (declare (ignore input)
+	     (ignore node)))
 
 (defun edges-are-equivalent (lhs-edges rhs-edges)
   (and (equal (length lhs-edges)

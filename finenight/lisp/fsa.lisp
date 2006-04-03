@@ -47,7 +47,7 @@ The hash table is a new instance."
 	(add-node (make-node :name (fsa-start fsa)) fsa))
     (mapcar (lambda (label)
 	      (if (not (has-node label fsa))
-		  (add-node (make-node :name label))))
+		  (add-node (make-node :name label) fsa)))
 	    (fsa-finals fsa))
     fsa))
 
@@ -107,8 +107,9 @@ The 'final' argument is a list of vertices."
 (defmethod is-accessible (label fsa)
   (let ((accessors nil))
     (maphash (lambda (key node)
-	       (if (node-access label node)
-		   (setf accessors (cons (node-name node) accessors))))
+		 (declare (ignore key))
+		 (if (node-access label node)
+		     (setf accessors (cons (node-name node) accessors))))
 	     (fsa-nodes fsa))
     accessors))
 	     
@@ -205,10 +206,12 @@ The 'final' argument is a list of vertices."
 		  (fsa-finals fsa))))
     (format stream ";~%~%  node [shape = circle];~% ")
     (maphash (lambda (key node)
+	       (declare (ignore key))
 	       (format stream " \"~A\"" (node-name node)))
 	     (fsa-nodes fsa))
     (format stream ";~%~%")
     (maphash (lambda (key node)
+	       (declare (ignore key))
 	       (mapcar (lambda (edge)
 			 (format stream "  \"~A\" -> \"~A\" [label = \"~A\"];~%" 
 				 (edge-source edge)
