@@ -34,7 +34,7 @@
     (null (transition #\b 1 my-fsa)))
 
 (defun transition-simple ()
-  (and (null (transition #\b 'a my-fsa))
+  (and (equal-set (transition #\b 'a my-fsa) '(b))
        (equal-set (transition "b" 'a my-fsa) '(b))
        (equal-set (transition "c" 'a my-fsa) '(d c))))
 
