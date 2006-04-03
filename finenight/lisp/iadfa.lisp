@@ -21,6 +21,7 @@
   (car (node-transition (last-input node) node)))
 
 (defmethod last-child (node)
+  (declare (ignore node))
   nil)
 
 (defun last-input (node)
@@ -72,13 +73,12 @@
     iadfa))
   
 (defun gen-iadfa (words)
-  (progn 
-    (setf iadfa (reduce (lambda (iadfa word) 
-			  (progn
-			    (format t "~%~%~A" word)
-			    (time (handle-word word iadfa))))
-			words 
-			:initial-value (build-iadfa)))
+  (let ((iadfa (reduce (lambda (iadfa word) 
+			 (progn
+			   (format t "~%~%~A" word)
+			   (time (handle-word word iadfa))))
+		       words 
+		       :initial-value (build-iadfa))))
     (iadfa-fsa (replace-or-register (fsa-start (iadfa-fsa iadfa)) iadfa))))
   
 (defun handle-word (word iadfa)
@@ -124,27 +124,10 @@
 	    (are-equivalent label other fsa))
 	  (gethash (last-child node) (iadfa-register iadfa)))))
 
-;; (defun equivalent-registered-states (child-label iadfa)
-;;   (let ((fsa (iadfa-fsa iadfa))
-;; 	(equivalent nil))
-;;     (with-hash-table-iterator
-;;      (my-iterator (iadfa-register iadfa))
-;;      (loop
-;;       (multiple-value-bind (entry-p label node)
-;; 	  (my-iterator)
-;; 	(declare (ignore node))
-;; 	(if entry-p
-;; 	    (setf equivalent (are-equivalent child-label label fsa))
-;; 	  (return))
-;; 	(if equivalent
-;; 	    (return))))
-;;      equivalent)))
-  
-	    
 (defun handle-equivalent-states (state-label child-label iadfa)
   (let* ((fsa (iadfa-fsa iadfa))
-	 (child (fsa-node child-label fsa)))
-    (setf equivalent (equivalent-registered-states child-label iadfa))
+	 (child (fsa-node child-label fsa))
+	 (equivalent (equivalent-registered-states child-label iadfa)))
     (if equivalent
 	(progn 
 	  (delete-branch child fsa)
