@@ -12,13 +12,12 @@
 (require :com.rrette.finenight.node "node.lisp")
 (require :com.rrette.finenight.utils "utils.lisp")
 
-(defstruct fsa
+(defstruct (fsa  (:copier nil))
   states ;list of all states
   alphabet 
   start ;the starting state
   finals ;list of final states
-  (nodes (make-hash-table)) ;the mapping from symbol -> states
-  :copier copy-fsa)
+  (nodes (make-hash-table))) ;the mapping from symbol -> states
 
 (defmethod is-final (label fsa)
   (if (member label (fsa-finals fsa))
@@ -133,6 +132,18 @@ The 'final' argument is a list of vertices."
 	(nodes (fsa-nodes fsa)))
     (if (null (gethash name nodes))
 	(setf (gethash name nodes) node))))
+
+
+(defun are-equivalent (lhs-label rhs-label fsa)
+  "Returns nil if they are not equivalent, return the rhs-label otherwise"
+  (let ((lhs (fsa-node lhs-label fsa))
+	(rhs (fsa-node rhs-label fsa)))
+    (if (and (equal (is-final lhs-label fsa)
+		    (is-final rhs-label fsa))
+	     (edges-are-equivalent (node-edges lhs)
+				   (node-edges rhs)))
+	rhs-label)))
+
 
 ;;;This function returns the node identified 
 ;;;by the id specified.

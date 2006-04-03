@@ -13,12 +13,12 @@
 (require :com.rrette.finenight.utils "utils.lisp")
 
 
-(defstruct node
-  (:copier nil)
+(defstruct (node (:copier nil))
   name
   (symbols (make-hash-table :test 'equal))
   edges
   epsilons)
+
 
 
 (defun copy-node (node)
@@ -27,6 +27,12 @@
 	     :epsilons (copy-list (node-epsilons node))
 	     :edges (copy-list (node-edges node))))
 
+(defmethod node-access (label (node node))
+  (some (lambda (edge)
+	  (if (equal (edge-destination edge)
+		     label)
+	      t))
+	(node-edges node)))
 
 ;;;This function will return a node built with the edges.
 ;;;The name of the node will be the source of the first edge.
@@ -103,12 +109,3 @@
 	      lhs-edges 
 	      rhs-edges)))
 
-(defun are-equivalent (lhs-label rhs-label fsa)
-  "Returns nil if they are not equivalent, return the rhs-label otherwise"
-  (let ((lhs (fsa-node lhs-label fsa))
-	(rhs (fsa-node rhs-label fsa)))
-    (if (and (equal (is-final lhs-label fsa)
-		    (is-final rhs-label fsa))
-	     (edges-are-equivalent (node-edges lhs)
-				   (node-edges rhs)))
-	rhs-label)))
