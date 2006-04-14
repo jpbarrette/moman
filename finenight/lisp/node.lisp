@@ -59,10 +59,10 @@
 	 (symbols (node-symbols n))
 	 (edges (node-edges n)))
     (setf (node-edges n) (cons edge edges))
-    (if (null (edge-symbol edge))
+    (if (null (edge-input edge))
 	(setf (node-epsilons n) (cons edge (node-epsilons n)))
-      (setf (gethash (string (edge-symbol edge)) symbols) 
-	    (cons edge (gethash (string (edge-symbol edge)) symbols))))
+      (setf (gethash (string (edge-input edge)) symbols) 
+	    (cons edge (gethash (string (edge-input edge)) symbols))))
     n))
 
 (defmethod nremove-edge (edge (node node))

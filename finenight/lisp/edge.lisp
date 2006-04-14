@@ -67,7 +67,7 @@
   (edge-symbol edge))
 
 (defmethod edge-input ((edge cons))
-  (edge-symbol (build-edge edge)))
+  (edge-input (build-edge edge)))
 
 (defmethod edge-output ((edge fst-edge))
   (fst-edge-output-symb edge))
@@ -76,7 +76,7 @@
   (edge-symbol edge))
 
 (defmethod edge-output ((edge cons))
-  (edge-symbol (build-edge edge)))
+  (edge-output (build-edge edge)))
 
 
 ;;; This function returns the destination state identification

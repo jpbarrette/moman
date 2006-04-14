@@ -198,7 +198,8 @@ The 'final' argument is a list of vertices."
 		      (graphviz-export-stream fsa 
 					      :stream stream
 					      :xsize xsize
-					      :ysize ysize)))))
+					      :ysize ysize)))
+    fsa))
 
 
 (defmethod graphviz-export-stream (fsa &key (stream t) (xsize 8) (ysize 11))

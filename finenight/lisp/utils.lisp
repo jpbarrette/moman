@@ -46,8 +46,9 @@
 	    (list-length rhs))
        (reduce (lambda (ok node)
 		 (if ok
-		     (not (null (member node rhs)))))
-		 (cons t lhs))))
+		     (not (null (member node rhs :test 'equal)))))
+	       lhs
+	       :initial-value t)))
 
 (defun uniqueness-set (set)
   (if (null set)
