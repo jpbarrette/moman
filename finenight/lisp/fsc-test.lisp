@@ -37,8 +37,8 @@
     (equal mycvect (generate-characteristic-vector #\a myvect))))
 
 (defun test-accepting1 ()
-  (let ((pos1 (make-instance 'n-position :i 1 :e 1))
-	(pos2 (make-instance 'n-position :i 2 :e 1))
+  (let ((pos1 (make-n-position :i 1 :e 1))
+	(pos2 (make-n-position :i 2 :e 1))
 	(res '(nil nil)))
     (and 
      (not (is-accepting 1 0 pos1))

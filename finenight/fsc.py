@@ -134,8 +134,6 @@ def transition(input, x, n, i, e):
         if i == w:
             return []
 
-
-    kMax = n + 2
     
             
 
@@ -189,21 +187,6 @@ def addone(vec):
 
 
 
-def genStates(n):
-    states = []
-    pendingStates = [[(0,0)]]
-    while len(pendingStates) != 0:
-        pendingState = pendingStates.pop()
-        if not isLikeStates(pendingState, states):
-            pendingStates += betaDelta(n, pendingState)
-            states.append(pendingState)
-
-    print "genstates: "
-    for state in states:
-        print "   " + str(state)
-    return states
-
-
 def isLikeStates(state, lowerStates):
 
     isLike = False
@@ -225,42 +208,6 @@ def isLikeStates(state, lowerStates):
     return isLike
     
 
-def betaDelta(n, origin):
-    print "BetaDelta for n = %s, origin = %s" % (n, origin)
-
-    states = []
-    #if X[0] == 1:
-    s = []
-    for (i, e) in origin:
-        s += [(i+1,e)]
-    states.append(reduce(s))
-
-    #if 1 not in X: 
-    s = []
-    for (i, e) in origin:
-        if n - e > 0:
-            s += [(i,e+1), (i+1,e+1)]
-    if len(s) > 0:
-        states.append(reduce(s))
-
-    #if 1 in X
-    j = 2
-    max = n + 1
-    while j <= max:
-        s = []
-
-        for (i, e) in origin:
-            if n - (e + j - 1) >= 0:
-                s += [(i,e+1), (i+1,e+1), (i+j, e + j - 1)]
-        if len(s) > 0:
-            states.append(reduce(s))
-        j += 1
-
-    for state in states:
-        print "   " + str(state)
-    return states
-
-           
 def delta( (stateType, index), character, input, states ):
     cv = characterizedVector( character, input )[:3]
     l = len(cv)

@@ -13,9 +13,8 @@ def usage():
 If a "word" argument is given, it check if its a valid word,
 and if not, it gives suggestions.
 
-If the --gen option is not given, inputfile must be a valid
-IADFA file, created by the "--gen" option. If the "--gen"
-option is given, inputfile, must be an sorted dictionnary file. 
+If the iadfa file is not given it will generate one with the
+data/test.dico.
 
 Mandatory arguments to long options are mandatory for short options too.
 -d, --dico-file=FILE            this is the dictionnary file that will
@@ -65,7 +64,8 @@ def debug(output):
 
 verbose = False
 config = {"transitionsFile" : "data/levenshtein.dat",
-          "iadfaFile": "data/iadfa.dat"}
+          "iadfaFile": "data/iadfa.dat",
+	  "dicoFile": "data/test.dico"}
 
 
 
@@ -95,7 +95,7 @@ def getTransitionStates(filename, distance):
 
 if __name__ == "__main__":
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "d:e:i:n:ot:v", ["dico-file=", "export=", "iadfa=", "distance=", "oflazer", "transitions-file=", "verbose"])
+        opts, args = getopt.getopt(sys.argv[1:], "d:e:i:n:ot:vh", ["dico-file=", "export=", "iadfa=", "distance=", "oflazer", "transitions-file=", "verbose", "help"])
     except getopt.GetoptError, e:
         # print help information and exit:
         print e
@@ -108,7 +108,7 @@ if __name__ == "__main__":
     distance = None
     transitionsFile = config["transitionsFile"]
     iadfaFile = config["iadfaFile"]
-    dicoFile = None
+    dicoFile = config["dicoFile"]
     for o, a in opts:
         if o in ("-d", "--dico-file"):
             dicoFile = a
@@ -131,15 +131,17 @@ if __name__ == "__main__":
         if o in ("-o", "--oflazer"):
             useFastAlgo = False
 
+        if o in ("-h", "--help"):
+	    usage()
+	    sys.exit(2)
+
         if o in ("-t", "--transitions-file"):
             transitionsFile = a
 
         if o in ("-v", "--verbose"):
             verbose = True
 
-    if dicoFile is not None:
-        a = generateIADFA(dicoFile, iadfaFile)
-    else:
+    if os.path.exists(iadfaFile):
         try:
             debug("Loading the FSA from IADFA file")
             a = pickle.load(open(iadfaFile, "r"))
@@ -147,6 +149,8 @@ if __name__ == "__main__":
             print "There's no valid IADFA file. You should Specify one, or " + \
                   "you should generate config's 'iadfaFile' file."
             sys.exit(2)
+    else:
+        a = generateIADFA(dicoFile, iadfaFile)
 
     if distance is not None:
         if distance <= 0:

@@ -161,19 +161,6 @@
 	    (possible-states n :f (+ f 1)))))
       
 
-(defun mtest (set) 
-  (mapcar (lambda (state)
-	    (mapcar (lambda (pos)
-		      (if (equal (pos-i pos) 4)
-			  (format t "~A~%" state)))
-		    state))
-	  set))
-
-
-(defun my-test ()			   
-  (mtest (mapcar (lambda (state) 
-		   (reduce-state state))
-		 (possible-states 2))))
     
 			     
 	
