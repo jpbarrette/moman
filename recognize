@@ -38,14 +38,14 @@ def generateIADFA(dictFilename, iadfaFilename):
     from finenight.iadfa import IncrementalAdfa
     debug("Reading the dico file.")
     f = open(dictFilename, "r");
-    words = []
-    for line in f:
-        if line[-1] == "\n":
-            line = line[0:-1]
-        words.append(line)
-    words.sort()
+#     words = []
+#     for line in f:
+#         if line[-1] == "\n":
+#             line = line[0:-1]
+#         words.append(line)
+    #words.sort()
     debug("Starting the FSA construction.")
-    a = IncrementalAdfa(words, sorted = True)
+    a = IncrementalAdfa(f, sorted = True)
     pickle.dump(a,open(iadfaFilename, "w"))
     debug("FSA saved.")
     return a
