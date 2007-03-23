@@ -27,7 +27,7 @@
   (lambda (node)
     (car (sort (node-symbols node) char>?))))
 
-(define has-children
+(define has-children?
   (lambda (node)
     (> (length (node-symbols node)) 0)))
 
@@ -102,7 +102,7 @@
 	   (common-prefix (cdr common))
 	   (last-node (car common))
 	   (current-suffix (list-tail word (length common-prefix))))
-      (if (has-children last-node)
+      (if (has-children? last-node)
 	  (replace-or-register iadfa last-node))
       (add-suffix last-node current-suffix iadfa)
       iadfa)))
@@ -115,7 +115,7 @@
       (if (marked-as-registered iadfa child )
 	  iadfa
 	  (let ()
-	    (if (has-children child)
+	    (if (has-children? child)
 		(replace-or-register iadfa child))
 	    (handle-equivalent-states iadfa node child)
 	    iadfa)))))

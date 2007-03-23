@@ -29,8 +29,8 @@
 
 ;; check for has-children
 (define allo-node (get-node myfsa 'allo))
-(check (has-children allo-node) => #f)
-(check (has-children ap-node) => #t)
+(check (has-children? allo-node) => #f)
+(check (has-children? ap-node) => #t)
 
 ;; check for common-prefix
 (define append-cp-a (common-prefix (string->list "appendice") start-node (string->list "")))
