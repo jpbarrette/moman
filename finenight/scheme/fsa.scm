@@ -1,5 +1,10 @@
 (define-extension fsa)
 (require-extension utils-scm)
+(require-extension defstruct)
+
+;(load "utils-scm.scm")
+;(load "plt-comp.scm")
+
 ;;(declare (unit fsa))
 
 ;; (define edge 
@@ -31,19 +36,23 @@
 ;; the node consists of a label and a map a symbol to 
 ;; a destination object. 
 (define-record node 
-  label
+  label 
   symbols-map
   final)
 
+;;(print-struct #t)
+
 (define-record-printer (node x out)
-  (fprintf out "~S"
-	   (node-edges x)))
+  (fprintf out "(node ~S ~S)"
+	   (node-label x) 
+	   (node-edges2 x)))
 
 
 
 (define make-empty-node
   (lambda (label)
     (make-node label (make-hash-table) #f)))
+
 
 (define node-symbols
   (lambda (node)
@@ -62,6 +71,20 @@
 				   (node-transition node (car symbols)))
 			      (S (cdr symbols)))))))
       (S (node-symbols node)))))
+
+(define node-edges2
+  (lambda (node)
+    (letrec ((label (node-label node))
+	     (S (lambda (symbols)
+		  (if (null? symbols)
+		      '()
+		      (append (map (lambda (dest-node)
+				     (cons (car symbols) 
+					   (node-label dest-node)))
+				   (node-transition node (car symbols)))
+			      (S (cdr symbols)))))))
+      (S (node-symbols node)))))
+
 
 (define node-add-edge!
   (lambda (node input-symbol dst-node)
@@ -97,9 +120,7 @@
 ;; initial-state speak of itself.
 ;; final-states is a list of nodes considered as final
 ;; transitions is a list of 3-tuple. (source-node input-symbol destination-node)
-(define-record fsa
-  initial-state
-  nodes)
+(define-record fsa initial-state nodes)
 
 (define-record-printer (fsa x out)
   (fprintf out "(fsa ~S ~S ~S)"
@@ -108,6 +129,8 @@
 (define fsa-initial-node
   (lambda (fsa)
     (get-node fsa (fsa-initial-state fsa))))
+
+
 
 (define my-hash-table-update!
   (lambda (hash-table key default-func)
@@ -137,6 +160,21 @@
 		   ((E (cdr nodes)))))))
       (E (hash-table-values (fsa-nodes fsa))))))
 	  
+
+(define node-is-equivalent
+  (lambda (lhs rhs)
+    (letrec ((edges-are-equivalent 
+	      (lambda (lhs-edges rhs-edges)
+		(cond ((null? lhs-edges) #t)
+		      ((not (member (car lhs-edges) rhs-edges)) #f)
+		      (else (edges-are-equivalent (cdr lhs-edges) rhs-edges))))))
+      (if (not (equal? (node-final lhs) (node-final rhs)))
+	  #f
+	  (let ((lhs-edges (node-edges2 lhs))
+		(rhs-edges (node-edges2 rhs)))
+	    (cond ((not (equal? (length lhs-edges) (length rhs-edges))) #f)
+		  (else (edges-are-equivalent lhs-edges rhs-edges))))))))
+
 
 (define fsa-add-edge!
   (lambda (fsa src-label input-symbol dst-label)

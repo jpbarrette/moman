@@ -1,7 +1,9 @@
 (require-extension check)
-
-;(declare (uses iadfa))
 (require-extension iadfa)
+;(load "iadfa.scm")
+;(require (lib "32.ss" "srfi"))
+;(declare (uses iadfa))
+
 
 (define myfsa (make-fsa 'a (make-hash-table)))
 
@@ -41,7 +43,7 @@
 
 (define my-iadfa (gen-iadfa '("appendice" "bateau")))
 ;(define my-iadfa (handle-word (build-iadfa) (string->list "appendice")))
-;(check (accept? (iadfa-fsa my-iadfa) (string->list "appendice")) => #t)
+(check (accept? (iadfa-fsa my-iadfa) (string->list "appendice")) => #t)
 
 (check (node-final (get-node (iadfa-fsa my-iadfa) 9)) => #t)
 

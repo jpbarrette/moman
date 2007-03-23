@@ -1,20 +1,25 @@
 (define-extension iadfa)
 (require-extension fsa)
+(require-extension defstruct)
+(load "utils-scm")
+
+;(load "fsa.scm")
+;(load "sort.scm")
+;(require (lib "32.ss" "srfi"))
+
 ;(declare (unit iadfa))
 ;(declare (uses fsa))
 
-(define-record iadfa
-  register 
-  index ;; this is used for automatic node name generation
-  fsa)
+(defstruct iadfa 
+  (register (make-hash-table)) 
+  (index 1) ;; this is used for automatic node name generation
+  (fsa (make-fsa 0 (make-hash-table))))
 
 ;; This will return the node's last child added.
 (define last-child
   (lambda (node)
     (let ((lst-node (node-transition node (last-input node))))
-      (if (null? lst-node)
-	  (break)
-	  (car lst-node)))))
+      (car lst-node))))
 
 
 ;; This returns the last node's symbol (alphabetical order)
@@ -43,8 +48,9 @@
   
 (define append-parent-to-registered
   (lambda (iadfa parent-label label)
-    (set! (hash-table-ref (iadfa-register iadfa) label) 
-	  (cons parent-label (hash-table-ref (iadfa-register iadfa) label)))))
+    (hash-table-set! (iadfa-register iadfa) 
+		     label 
+		     (cons parent-label (hash-table-ref (iadfa-register iadfa) label (lambda () '()))))))
 
 (define mark-as-registered
   (lambda (iadfa parent-label label)
@@ -98,7 +104,8 @@
 	   (current-suffix (list-tail word (length common-prefix))))
       (if (has-children last-node)
 	  (replace-or-register iadfa last-node))
-      (add-suffix last-node current-suffix iadfa))))
+      (add-suffix last-node current-suffix iadfa)
+      iadfa)))
 
 
 (define replace-or-register
@@ -107,24 +114,26 @@
 	   (child (last-child node)))
       (if (marked-as-registered iadfa child )
 	  iadfa
-	  (progn
-	   (if (has-children child)
-	       (replace-or-register iadfa child))
-	   (handle-equivalent-states iadfa node child)
-	   iadfa)))))
+	  (let ()
+	    (if (has-children child)
+		(replace-or-register iadfa child))
+	    (handle-equivalent-states iadfa node child)
+	    iadfa)))))
 
 
 (define equivalent-registered-states
   (lambda (iadfa node)
     (if (final? node)
-	(find-equivalent-final-registered-states node iadfa)
+	(find-equivalent-final-registered-states iadfa node)
 	(find-equivalent-registered-states iadfa node))))
 
 (define find-equivalent-final-registered-states
-  (lambda (node iadfa)
+  (lambda (iadfa node)
     (let ((fsa (iadfa-fsa iadfa)))
       (some (lambda (other)
-	      (are-equivalent node other fsa))
+	      (if (equal? other (node-label node)) 
+		  #f
+		  (node-is-equivalent node (get-node fsa other))))
 	    (fsa-finals fsa)))))
 
 
@@ -132,17 +141,17 @@
   (lambda (iadfa node)
     (let ((fsa (iadfa-fsa iadfa)))
       (some (lambda (other)
-	      (are-equivalent node other fsa))
-	    (hash-table-ref (iadfa-register iadfa) (last-child node))))))
+	      (node-is-equivalent node (get-node fsa other)))
+	    (hash-table-ref (iadfa-register iadfa) (node-label (last-child node)))))))
 
 (define handle-equivalent-states
   (lambda (iadfa node child)
     (let* ((fsa (iadfa-fsa iadfa))
 	   (equivalent (equivalent-registered-states iadfa child)))
       (if equivalent
-	  (progn 
-	   (delete-branch child fsa)
-	   (replace-last-child node equivalent iadfa))
+	  (begin
+	    (delete-branch fsa child)
+	    (replace-last-child node equivalent iadfa))
 	  (mark-as-registered iadfa (node-label node) (node-label child)))
       iadfa)))
 
@@ -157,12 +166,12 @@
       (append-parent-to-registered iadfa (node-label node) (node-label new-child)))))
 
 (define delete-branch 
-  (lambda (child fsa)
-    (if child
-	(progn
-	 (delete-branch (last-child child))
-	 (nremove-node child fsa))
-	fsa)))
+  (lambda (fsa child)
+    (let ()
+      (if (has-children? child)
+	  (delete-branch fsa (last-child child)))
+      (fsa-remove-node! fsa child))
+    fsa))
 
 (define add-suffix
   (lambda (node current-suffix iadfa)
