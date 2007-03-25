@@ -4,7 +4,7 @@
 ;;(declare (uses fsa))
 ;;(use fsa)
 
-(define myfsa (make-fsa 'a (make-hash-table)))
+(define myfsa (make-empty-fsa 'a))
 
 (fsa-add-edge! myfsa 'a #\b 'b)
 (define a-node (get-node myfsa 'a))
@@ -19,7 +19,7 @@
 (fsa-remove-edge! myfsa 'b #\c 'c)
 (check (node-transition b-node #\c) => '())
 
-(define myfsa (make-fsa 'a (make-hash-table)))
+(define myfsa (make-empty-fsa 'a))
 
 (fsa-add-edge! myfsa 'a #\a 'a)
 (fsa-add-edge! myfsa 'a #\b 'ab)

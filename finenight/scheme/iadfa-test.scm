@@ -1,11 +1,12 @@
 (require-extension check)
 (require-extension iadfa)
+
 ;(load "iadfa.scm")
 ;(require (lib "32.ss" "srfi"))
 ;(declare (uses iadfa))
 
 
-(define myfsa (make-fsa 'a (make-hash-table)))
+(define myfsa (make-empty-fsa 'a))
 
 (fsa-add-edge! myfsa 'start #\a 'a)
 (fsa-add-edge! myfsa 'a #\l 'al)
@@ -41,11 +42,16 @@
 ;; check for reduce
 (check (reduce (lambda (v1 v2) (+ v1 v2)) 1 (list 2 3 4 5)) => 15)
 
-(define my-iadfa (gen-iadfa '("appendice" "bateau")))
+(define my-fsa (gen-iadfa '("appendice" "bateau")))
 ;(define my-iadfa (handle-word (build-iadfa) (string->list "appendice")))
-(check (accept? (iadfa-fsa my-iadfa) (string->list "appendice")) => #t)
+(check (accept? my-fsa (string->list "appendice")) => #t)
+(check (accept? my-fsa (string->list "bateau")) => #t)
+(check (accept? my-fsa (string->list "appendic")) => #f)
 
-(check (node-final (get-node (iadfa-fsa my-iadfa) 9)) => #t)
+(check (node-final (get-node my-fsa 9)) => #t)
+
+(graphviz-export my-fsa)
+
 
 ;; (display (gen-iadfa '("allo"  "bateau")))
 ;; (define b (list 'z 'y 'x 'w 'v))

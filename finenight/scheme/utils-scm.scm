@@ -1,5 +1,29 @@
 ;(define-extension utils-scm)
 
+(define rember
+  (lambda (values value)
+    (cond ((null? values) '())
+	  ((eq? (car values) value)
+	   (rember (cdr values) value))
+	  (else (cons (car values) 
+		      (rember (cdr values) value))))))
+
+(define my-hash-table-get!
+  (lambda (hash-table key default-func)
+    (if (hash-table-exists? hash-table key)
+	(hash-table-ref hash-table key)
+	(let ((value (default-func)))
+	  (hash-table-set! hash-table key value)
+	  value))))
+
+(define my-hash-table-update!
+  (lambda (hash-table key default-func func)
+    (if (not (hash-table-exists? hash-table key))
+	(hash-table-set! hash-table key (default-func)))
+    (hash-table-set! hash-table key 
+		     (func (hash-table-ref hash-table key)))))
+
+
 (define reduce
   (lambda (func initial-value values)
     (letrec ((R (lambda (v1 values)

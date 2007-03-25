@@ -1,6 +1,6 @@
 (define-extension iadfa)
 (require-extension fsa)
-(require-extension defstruct)
+;(require-extension defstruct)
 (load "utils-scm")
 
 ;(load "fsa.scm")
@@ -10,10 +10,10 @@
 ;(declare (unit iadfa))
 ;(declare (uses fsa))
 
-(defstruct iadfa 
-  (register (make-hash-table)) 
-  (index 1) ;; this is used for automatic node name generation
-  (fsa (make-fsa 0 (make-hash-table))))
+(define-record iadfa 
+  register
+  index ;; this is used for automatic node name generation
+  fsa)
 
 ;; This will return the node's last child added.
 (define last-child
@@ -48,9 +48,11 @@
   
 (define append-parent-to-registered
   (lambda (iadfa parent-label label)
-    (hash-table-set! (iadfa-register iadfa) 
-		     label 
-		     (cons parent-label (hash-table-ref (iadfa-register iadfa) label (lambda () '()))))))
+    (my-hash-table-update! (iadfa-register iadfa) 
+			   label 
+			   (lambda () '())
+			   (lambda (lst)
+			     (cons parent-label lst)))))
 
 (define mark-as-registered
   (lambda (iadfa parent-label label)
@@ -68,24 +70,8 @@
   (lambda ()
     (make-iadfa (make-hash-table) 
 		1
-		(make-fsa 0 (make-hash-table)))))
+		(make-empty-fsa 0))))
   
-
-;; (define gen-iadfa 
-;;   (lambda (words)
-;;     (let ((iadfa (build-iadfa)))
-;;       (letrec ((G (lambda (words)
-;; 		    (if (null? words)
-;; 			iadfa
-;; 			(progn
-;; 			 ;;(format t "~%~%~A" word)
-;; 			 (time (handle-word iadfa (string->list (car words))))
-;; 			 (G (cdr words)))))))
-;; 	(G words)))))
-
-
-;;      (iadfa-fsa (replace-or-register (fsa-start (iadfa-fsa iadfa)) iadfa)))))
-
 (define gen-iadfa 
   (lambda (words)
     (let ((iadfa (reduce (lambda (iadfa word) 
@@ -93,7 +79,6 @@
 			 (build-iadfa)
 			 words)))
      (iadfa-fsa (replace-or-register iadfa (fsa-initial-node (iadfa-fsa iadfa)))))))
-;    (iadfa-fsa iadfa))))
 
 (define handle-word
   (lambda (iadfa word)
@@ -133,7 +118,9 @@
       (some (lambda (other)
 	      (if (equal? other (node-label node)) 
 		  #f
-		  (node-is-equivalent node (get-node fsa other))))
+		  (if (node-is-equivalent node (get-node fsa other))
+		      other
+		      #f)))
 	    (fsa-finals fsa)))))
 
 
@@ -141,8 +128,15 @@
   (lambda (iadfa node)
     (let ((fsa (iadfa-fsa iadfa)))
       (some (lambda (other)
-	      (node-is-equivalent node (get-node fsa other)))
-	    (hash-table-ref (iadfa-register iadfa) (node-label (last-child node)))))))
+	      (if (equal? other (node-label node)) 
+		  #f
+		  (if (node-is-equivalent node (get-node fsa other))
+		      other
+		      #f)))
+	    (hash-table-ref/default 
+	     (iadfa-register iadfa) 
+	     (node-label (last-child node)) '()
+	     )))))
 
 (define handle-equivalent-states
   (lambda (iadfa node child)
@@ -150,14 +144,14 @@
 	   (equivalent (equivalent-registered-states iadfa child)))
       (if equivalent
 	  (begin
-	    (delete-branch fsa child)
-	    (replace-last-child node equivalent iadfa))
+	    (delete-branch iadfa child)
+	    (replace-last-child node (get-node fsa equivalent) iadfa))
 	  (mark-as-registered iadfa (node-label node) (node-label child)))
       iadfa)))
 
 
 (define replace-last-child
-  (lambda (node child new-child iadfa)
+  (lambda (node new-child iadfa)
     (let* ((fsa (iadfa-fsa iadfa))
 	   (input (last-input node))
 	   (current-child (last-child node)))
@@ -166,12 +160,12 @@
       (append-parent-to-registered iadfa (node-label node) (node-label new-child)))))
 
 (define delete-branch 
-  (lambda (fsa child)
-    (let ()
+  (lambda (iadfa child)
+    (let ((fsa (iadfa-fsa iadfa)))
       (if (has-children? child)
-	  (delete-branch fsa (last-child child)))
+	  (delete-branch iadfa (last-child child)))
       (fsa-remove-node! fsa child))
-    fsa))
+    iadfa))
 
 (define add-suffix
   (lambda (node current-suffix iadfa)

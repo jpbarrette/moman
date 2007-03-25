@@ -1,6 +1,7 @@
 (define-extension fsa)
 (require-extension utils-scm)
 (require-extension defstruct)
+(require-extension format)
 
 ;(load "utils-scm.scm")
 ;(load "plt-comp.scm")
@@ -24,14 +25,6 @@
 ;;   (lambda (edge)
 ;;     (car (cdr (cdr edge)))))
 
-
-(define rember
-  (lambda (values value)
-    (cond ((null? values) '())
-	  ((eq? (car values) value)
-	   (rember (cdr values) value))
-	  (else (cons (car values) 
-		      (rember (cdr values)))))))
 
 ;; the node consists of a label and a map a symbol to 
 ;; a destination object. 
@@ -100,13 +93,25 @@
 (define node-remove-edge!
   (lambda (node input-symbol dst-node)
     (let ((symbols-map (node-symbols-map node)))
-      (hash-table-set! symbols-map 
-		       input-symbol 
-		       (rember 
-			(hash-table-ref symbols-map
-					input-symbol
-					(lambda () (quote ())))
-			dst-node)))))
+      (my-hash-table-update! symbols-map 
+			     input-symbol 
+			     (lambda () '())
+			     (lambda (lst)
+			       (rember lst dst-node)))
+      node)))
+
+(define node-remove-dst!
+  (lambda (node dst-node)
+    (let ((symbols-map (node-symbols-map node)))
+      (map (lambda (symbol)
+	     (hash-table-set! symbols-map 
+			      symbol 
+			      (rember 
+			       (hash-table-ref symbols-map
+					       symbol
+					       (lambda () (quote ())))
+			       dst-node)))
+	   (node-symbols node)))))
 
 
 ;; will return the list of destination nodes for the
@@ -120,7 +125,7 @@
 ;; initial-state speak of itself.
 ;; final-states is a list of nodes considered as final
 ;; transitions is a list of 3-tuple. (source-node input-symbol destination-node)
-(define-record fsa initial-state nodes)
+(define-record fsa initial-state nodes ancestrors-nodes)
 
 (define-record-printer (fsa x out)
   (fprintf out "(fsa ~S ~S ~S)"
@@ -131,14 +136,6 @@
     (get-node fsa (fsa-initial-state fsa))))
 
 
-
-(define my-hash-table-update!
-  (lambda (hash-table key default-func)
-    (if (hash-table-exists? hash-table key)
-	(hash-table-ref hash-table key)
-	(let ((value (default-func)))
-	  (hash-table-set! hash-table key value)
-	  value))))
 
 (define fsa-edges
   (lambda (fsa)
@@ -178,28 +175,49 @@
 
 (define fsa-add-edge!
   (lambda (fsa src-label input-symbol dst-label)
-    (let ((src-node (my-hash-table-update! (fsa-nodes fsa) src-label (lambda () (make-empty-node src-label))))
-	  (dst-node (my-hash-table-update! (fsa-nodes fsa) dst-label (lambda () (make-empty-node dst-label)))))
+    (let ((src-node (my-hash-table-get! (fsa-nodes fsa) src-label (lambda () (make-empty-node src-label))))
+	  (dst-node (my-hash-table-get! (fsa-nodes fsa) dst-label (lambda () (make-empty-node dst-label))))
+	  (ancestrors (hash-table-ref/default (fsa-ancestrors-nodes fsa) dst-label (list))))
+      (if (not (member src-label ancestrors))
+	  (hash-table-set! (fsa-ancestrors-nodes fsa) dst-label (cons src-label ancestrors)))
       (node-add-edge! src-node input-symbol dst-node)
+      fsa)))
+
+(define fsa-remove-node!
+  (lambda (fsa node)
+    (let ((ancestrors (hash-table-ref/default (fsa-ancestrors-nodes fsa) (node-label node) (list))))
+      (map (lambda (ancestror)
+	     (node-remove-dst! node (get-node fsa ancestror)))
+	   ancestrors)
+      (hash-table-delete! (fsa-nodes fsa) (node-label node))
       fsa)))
 
 (define fsa-remove-edge!
   (lambda (fsa src-label input-symbol dst-label)
-    (let ((src-node (my-hash-table-update! (fsa-nodes fsa) src-label (lambda () (make-empty-node src-label))))
-	  (dst-node (my-hash-table-update! (fsa-nodes fsa) dst-label (lambda () (make-empty-node dst-label)))))
+    (let ((src-node (my-hash-table-get! (fsa-nodes fsa) src-label (lambda () (make-empty-node src-label))))
+	  (dst-node (my-hash-table-get! (fsa-nodes fsa) dst-label (lambda () (make-empty-node dst-label)))))
+      (my-hash-table-update! (fsa-ancestrors-nodes fsa) 
+			     dst-label 
+			     (lambda () (list))
+			     (lambda (lst)
+			       (rember lst dst-label)))
       (node-remove-edge! src-node input-symbol dst-node)
       fsa)))
   
 (define build-fsa
-  (lambda (edges)
+  (lambda (initial-label edges)
     (reduce (lambda (fsa edge)
 	      (fsa-add-edge! fsa (car edge) (cadr edge) (caddr edge)))
-	    (make-empty-fsa)
+	    (make-empty-fsa initial-label)
 	    edges)))
+
+(define make-empty-fsa
+  (lambda (initial-label)
+    (make-fsa initial-label (make-hash-table) (make-hash-table))))
 
 (define get-node 
   (lambda (fsa node-label) 
-    (my-hash-table-update! (fsa-nodes fsa) node-label (lambda () (make-empty-node node-label)))))
+    (my-hash-table-get! (fsa-nodes fsa) node-label (lambda () (make-empty-node node-label)))))
 
 (define get-state 
   (lambda (fsa label) 
@@ -275,3 +293,48 @@
     (node-final-set! (get-node fsa node-label) #t)
     fsa))
 			      
+
+
+(define graphviz-export
+  (lambda (fsa) 
+    "This function will write the dot description of the FSA in the stream."
+    (let ((p (open-output-file "test.dot")))
+     (display (format "digraph G {~%  rankdir = LR;~%  size = \"8, 10\";~%") 
+	      p)
+     (display (format "  rotate = 90;~%")
+	      p)
+     (if (not (null? (fsa-finals fsa)))
+	 (begin
+	  (display (format "~%  node [shape = doublecircle];~% ")
+		   p)
+	  (map (lambda (x) 
+		 (display (format " \"~A\"" x) 
+			  p))
+	       (fsa-finals fsa))))
+     (display (format ";~%~%  node [shape = circle];~% ")
+	      p)
+     (map (lambda (node)
+	    (display (format " \"~A\"" (node-label node))
+		     p))
+	  (hash-table-values (fsa-nodes fsa)))
+     (display (format ";~%~%")
+	      p)
+     (map (lambda (node)
+	    (map (lambda (edge)
+		   (display (format "  \"~A\" -> \"~A\" [label = \"~A\"];~%"
+				    (car edge)
+				    (caddr edge)
+				    (if (null? (cadr edge))
+					"epsilon"
+					(cadr edge)))
+			    p))
+		 (node-edges node)))
+	  (hash-table-values (fsa-nodes fsa)))
+     (display (format "}~%") 
+	      p)
+     (close-output-port p)
+     fsa)))
+
+  
+
+  
