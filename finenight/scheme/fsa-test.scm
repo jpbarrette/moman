@@ -41,10 +41,28 @@
 (check (node-label abbo-node) => 'abbo)
 (check (node-final (get-node myfsa 'abbo)) => #t)
 
-(accept? myfsa (string->list "abbo"))
+(check (accept? myfsa (string->list "abbo")) => #t)
 
-(node-edges (get-node myfsa 'a))
-(fsa-edges myfsa)
+
+
+
+; testing deletion of nodes
+(define myfsa (make-empty-fsa 'a))
+
+(fsa-add-edge! myfsa 'a #\a 'a)
+(fsa-add-edge! myfsa 'a #\c 'c)
+(fsa-add-edge! myfsa 'a #\b 'b)
+(fsa-add-edge! myfsa 'b #\d 'd)
+(fsa-add-edge! myfsa 'd #\c 'c)
+
+(fsa-add-final! myfsa 'c)
+
+(fsa-remove-node! myfsa (get-node myfsa 'b))
+
+(graphviz-export myfsa)
+
+
+
 
 
 

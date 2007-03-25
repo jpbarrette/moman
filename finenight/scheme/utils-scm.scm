@@ -3,7 +3,7 @@
 (define rember
   (lambda (values value)
     (cond ((null? values) '())
-	  ((eq? (car values) value)
+	  ((equal? (car values) value)
 	   (rember (cdr values) value))
 	  (else (cons (car values) 
 		      (rember (cdr values) value))))))

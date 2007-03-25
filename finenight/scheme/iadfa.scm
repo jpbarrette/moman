@@ -29,7 +29,7 @@
 
 (define has-children?
   (lambda (node)
-    (> (length (node-symbols node)) 0)))
+    (not (null? (node-edges node)))))
 
 (define common-prefix
   (lambda (word node prefix)
@@ -79,6 +79,7 @@
 			 (build-iadfa)
 			 words)))
      (iadfa-fsa (replace-or-register iadfa (fsa-initial-node (iadfa-fsa iadfa)))))))
+
 
 (define handle-word
   (lambda (iadfa word)
@@ -150,20 +151,29 @@
       iadfa)))
 
 
+;; (define replace-last-child
+;;   (lambda (node new-child iadfa)
+;;     (let* ((fsa (iadfa-fsa iadfa))
+;; 	   (input (last-input node)))
+;; 	   (current-child (last-child node)))
+;;       (fsa-remove-edge! fsa (node-label node) input (node-label current-child))
+;;       (fsa-add-edge! fsa (node-label node) input (node-label new-child))
+;;       (append-parent-to-registered iadfa (node-label node) (node-label new-child)))))
+
 (define replace-last-child
   (lambda (node new-child iadfa)
     (let* ((fsa (iadfa-fsa iadfa))
-	   (input (last-input node))
-	   (current-child (last-child node)))
-      (fsa-remove-edge! fsa (node-label node) input (node-label current-child))
+	   (input (last-input node)))
       (fsa-add-edge! fsa (node-label node) input (node-label new-child))
-      (append-parent-to-registered iadfa (node-label node) (node-label new-child)))))
+      (append-parent-to-registered iadfa (node-label node) (node-label new-child))
+      node)))
+
 
 (define delete-branch 
   (lambda (iadfa child)
     (let ((fsa (iadfa-fsa iadfa)))
-      (if (has-children? child)
-	  (delete-branch iadfa (last-child child)))
+      ;(if (has-children? child)
+	;  (delete-branch iadfa (last-child child)))
       (fsa-remove-node! fsa child))
     iadfa))
 

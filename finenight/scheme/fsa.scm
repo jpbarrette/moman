@@ -104,14 +104,13 @@
   (lambda (node dst-node)
     (let ((symbols-map (node-symbols-map node)))
       (map (lambda (symbol)
-	     (hash-table-set! symbols-map 
-			      symbol 
-			      (rember 
-			       (hash-table-ref symbols-map
-					       symbol
-					       (lambda () (quote ())))
-			       dst-node)))
-	   (node-symbols node)))))
+	     (my-hash-table-update! symbols-map 
+				    symbol 
+				    (lambda () '())
+				    (lambda (lst)
+				      (rember lst dst-node))))
+	   (node-symbols node)))
+    node))
 
 
 ;; will return the list of destination nodes for the
@@ -187,7 +186,7 @@
   (lambda (fsa node)
     (let ((ancestrors (hash-table-ref/default (fsa-ancestrors-nodes fsa) (node-label node) (list))))
       (map (lambda (ancestror)
-	     (node-remove-dst! node (get-node fsa ancestror)))
+	     (node-remove-dst! (get-node fsa ancestror) node))
 	   ancestrors)
       (hash-table-delete! (fsa-nodes fsa) (node-label node))
       fsa)))
@@ -205,11 +204,15 @@
       fsa)))
   
 (define build-fsa
-  (lambda (initial-label edges)
-    (reduce (lambda (fsa edge)
-	      (fsa-add-edge! fsa (car edge) (cadr edge) (caddr edge)))
-	    (make-empty-fsa initial-label)
-	    edges)))
+  (lambda (initial-label edges finals)
+    (let ((fsa (reduce (lambda (fsa edge)
+			 (fsa-add-edge! fsa (car edge) (cadr edge) (caddr edge)))
+		       (make-empty-fsa initial-label)
+		       edges)))
+    (reduce (lambda (fsa final)
+	      (fsa-add-final! fsa final))
+	    fsa
+	    finals))))
 
 (define make-empty-fsa
   (lambda (initial-label)
