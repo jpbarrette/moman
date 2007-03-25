@@ -81,13 +81,11 @@
 (define node-add-edge!
   (lambda (node input-symbol dst-node)
     (let ((symbols-map (node-symbols-map node)))
-      (hash-table-set! symbols-map 
-		       input-symbol 
-		       (append 
-			(hash-table-ref symbols-map
-					input-symbol
-					(lambda () (quote ())))
-			(list dst-node))))))
+      (my-hash-table-update! symbols-map 
+			      input-symbol 
+			      (lambda () (list))
+			      (lambda (lst)
+				(cons dst-node lst))))))
 
 (define node-remove-edge!
   (lambda (node input-symbol dst-node)
@@ -123,11 +121,11 @@
 ;; initial-state speak of itself.
 ;; final-states is a list of nodes considered as final
 ;; transitions is a list of 3-tuple. (source-node input-symbol destination-node)
-(define-record fsa initial-state nodes ancestrors-nodes)
+(define-record fsa initial-state nodes ancestrors-nodes finals)
 
 (define-record-printer (fsa x out)
   (fprintf out "(fsa ~S ~S ~S)"
-	   (fsa-initial-state x) (fsa-finals x) (fsa-edges x)))
+	   (fsa-initial-state x) (fsa-finals x) (hash-table->alist (fsa-nodes x))))
 
 (define fsa-initial-node
   (lambda (fsa)
@@ -144,32 +142,26 @@
 			      (E (cdr nodes)))))))
       (E (hash-table-values (fsa-nodes fsa))))))
 
-(define fsa-finals
-  (lambda (fsa)
-    (letrec ((E (lambda (nodes) 
-		  (cond
-		   ((null? nodes) '())
-		   ((final? (car nodes)) 
-		    (cons (node-label (car nodes))
-			  (E (cdr nodes))))
-		   ((E (cdr nodes)))))))
-      (E (hash-table-values (fsa-nodes fsa))))))
-	  
+;; (define node-is-equivalent
+;;   (lambda (lhs rhs)
+;;     (letrec ((edges-are-equivalent 
+;; 	      (lambda (lhs-edges rhs-edges)
+;; 		(cond ((null? lhs-edges) #t)
+;; 		      ((not (member (car lhs-edges) rhs-edges)) #f)
+;; 		      (else (edges-are-equivalent (cdr lhs-edges) rhs-edges))))))
+;;       (if (not (equal? (node-final lhs) (node-final rhs)))
+;; 	  #f
+;; 	  (let ((lhs-edges (node-edges2 lhs))
+;; 		(rhs-edges (node-edges2 rhs)))
+;; 	    (cond ((not (equal? (length lhs-edges) (length rhs-edges))) #f)
+;; 		  (else (edges-are-equivalent lhs-edges rhs-edges))))))))
 
 (define node-is-equivalent
   (lambda (lhs rhs)
-    (letrec ((edges-are-equivalent 
-	      (lambda (lhs-edges rhs-edges)
-		(cond ((null? lhs-edges) #t)
-		      ((not (member (car lhs-edges) rhs-edges)) #f)
-		      (else (edges-are-equivalent (cdr lhs-edges) rhs-edges))))))
       (if (not (equal? (node-final lhs) (node-final rhs)))
 	  #f
-	  (let ((lhs-edges (node-edges2 lhs))
-		(rhs-edges (node-edges2 rhs)))
-	    (cond ((not (equal? (length lhs-edges) (length rhs-edges))) #f)
-		  (else (edges-are-equivalent lhs-edges rhs-edges))))))))
-
+	  (equal? (node-symbols-map lhs)
+		  (node-symbols-map rhs)))))
 
 (define fsa-add-edge!
   (lambda (fsa src-label input-symbol dst-label)
@@ -183,11 +175,13 @@
 
 (define fsa-remove-node!
   (lambda (fsa node)
-    (let ((ancestrors (hash-table-ref/default (fsa-ancestrors-nodes fsa) (node-label node) (list))))
+    (let* ((label (node-label node))
+	   (ancestrors (hash-table-ref/default (fsa-ancestrors-nodes fsa) label (list))))
       (map (lambda (ancestror)
 	     (node-remove-dst! (get-node fsa ancestror) node))
 	   ancestrors)
-      (hash-table-delete! (fsa-nodes fsa) (node-label node))
+      (hash-table-delete! (fsa-nodes fsa) label)
+      (fsa-finals-set! fsa (rember (fsa-finals fsa) node))
       fsa)))
 
 (define fsa-remove-edge!
@@ -215,7 +209,7 @@
 
 (define make-empty-fsa
   (lambda (initial-label)
-    (make-fsa initial-label (make-hash-table) (make-hash-table))))
+    (make-fsa initial-label (make-hash-table) (make-hash-table) (list))))
 
 (define get-node 
   (lambda (fsa node-label) 
@@ -292,10 +286,13 @@
 
 (define fsa-add-final! 
   (lambda (fsa node-label)
-    (node-final-set! (get-node fsa node-label) #t)
-    fsa))
-			      
+    (fsa-add-final! fsa (get-node fsa node-label))))
 
+(define fsa-add-final-node! 
+  (lambda (fsa node)
+    (fsa-finals-set! fsa (cons node (fsa-finals fsa)))
+    (node-final-set! node #t)
+    fsa))
 
 (define graphviz-export
   (lambda (fsa) 
@@ -310,15 +307,15 @@
 	  (display (format "~%  node [shape = doublecircle];~% ")
 		   p)
 	  (map (lambda (x) 
-		 (display (format " \"~A\"" x) 
+		 (display (format " \"~A\"" (node-label x))
 			  p))
 	       (fsa-finals fsa))))
      (display (format ";~%~%  node [shape = circle];~% ")
 	      p)
-     (map (lambda (node)
-	    (display (format " \"~A\"" (node-label node))
+     (map (lambda (label)
+	    (display (format " \"~A\"" label)
 		     p))
-	  (hash-table-values (fsa-nodes fsa)))
+	  (hash-table-keys (fsa-nodes fsa)))
      (display (format ";~%~%")
 	      p)
      (map (lambda (node)

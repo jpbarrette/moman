@@ -125,6 +125,7 @@ class IncrementalAdfa(Dfa):
 
         lastWord = None
         for word in words:
+	    print word
             lastStateName, currentSuffix = self.getCommonPrefix(word)
             if self.hasChildren(lastStateName):
                 self.replaceOrRegister(lastStateName)

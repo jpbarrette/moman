@@ -1,4 +1,4 @@
-;(define-extension utils-scm)
+(define-extension utils-scm)
 
 (define rember
   (lambda (values value)

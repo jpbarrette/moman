@@ -47,16 +47,24 @@
     (hash-table-exists? (iadfa-register iadfa) state)))
   
 (define append-parent-to-registered
-  (lambda (iadfa parent-label label)
+  (lambda (iadfa parent child)
     (my-hash-table-update! (iadfa-register iadfa) 
-			   label 
+			   (node-label child)
 			   (lambda () '())
 			   (lambda (lst)
-			     (cons parent-label lst)))))
+			     (cons parent lst)))))
+
+(define delete-parent-to-registered
+  (lambda (iadfa parent child)
+    (my-hash-table-update! (iadfa-register iadfa) 
+			   (node-label child)
+			   (lambda () '())
+			   (lambda (lst)
+			     (rember lst parent)))))
 
 (define mark-as-registered
-  (lambda (iadfa parent-label label)
-    (append-parent-to-registered iadfa parent-label label)))
+  (lambda (iadfa parent child)
+    (append-parent-to-registered iadfa parent child)))
 
 
 (define generate-state
@@ -87,8 +95,8 @@
        file
        (lambda (line)
 	 (display (format "~A ~%" line))
-	 (time (handle-word iadfa 
-		      (string->list line)))))
+	 (handle-word iadfa 
+		      (string->list line))))
       (iadfa-fsa (replace-or-register iadfa (fsa-initial-node (iadfa-fsa iadfa)))))))
 
 
@@ -128,9 +136,9 @@
   (lambda (iadfa node)
     (let ((fsa (iadfa-fsa iadfa)))
       (some (lambda (other)
-	      (if (equal? other (node-label node)) 
+	      (if (equal? (node-label other) (node-label node)) 
 		  #f
-		  (if (node-is-equivalent node (get-node fsa other))
+		  (if (node-is-equivalent node other)
 		      other
 		      #f)))
 	    (fsa-finals fsa)))))
@@ -140,15 +148,14 @@
   (lambda (iadfa node)
     (let ((fsa (iadfa-fsa iadfa)))
       (some (lambda (other)
-	      (if (equal? other (node-label node)) 
+	      (if (equal? (node-label other) (node-label node)) 
 		  #f
-		  (if (node-is-equivalent node (get-node fsa other))
+		  (if (node-is-equivalent node other)
 		      other
 		      #f)))
 	    (hash-table-ref/default 
 	     (iadfa-register iadfa) 
-	     (node-label (last-child node)) '()
-	     )))))
+	     (node-label (last-child node)) '())))))
 
 (define handle-equivalent-states
   (lambda (iadfa node child)
@@ -157,8 +164,8 @@
       (if equivalent
 	  (begin
 	    (delete-branch iadfa child)
-	    (replace-last-child node (get-node fsa equivalent) iadfa))
-	  (mark-as-registered iadfa (node-label node) (node-label child)))
+	    (replace-last-child node equivalent iadfa))
+	  (mark-as-registered iadfa node child))
       iadfa)))
 
 
@@ -176,13 +183,17 @@
     (let* ((fsa (iadfa-fsa iadfa))
 	   (input (last-input node)))
       (fsa-add-edge! fsa (node-label node) input (node-label new-child))
-      (append-parent-to-registered iadfa (node-label node) (node-label new-child))
+      (append-parent-to-registered iadfa node new-child)
       node)))
 
 
 (define delete-branch 
   (lambda (iadfa child)
     (let ((fsa (iadfa-fsa iadfa)))
+      (if (has-children? child)
+	  (delete-parent-to-registered iadfa 
+				       child
+				       (last-child child)))
       ;(if (has-children? child)
 	;  (delete-branch iadfa (last-child child)))
       (fsa-remove-node! fsa child))
@@ -199,11 +210,7 @@
 		  fsa))
 	      (iadfa-fsa iadfa)
 	      current-suffix)
-      (node-final-set! last-node #t)
+      (fsa-add-final-node! fsa last-node)
       iadfa)))
 
-
-
-
-;;(check (eval (car (transition myfsa 'a 'b))) => (list 'z 'y 'x 'w 'v))
 
