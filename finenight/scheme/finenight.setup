@@ -1,0 +1,11 @@
+(compile -profile -s -O2 -d1 utils-scm.scm)
+(compile -profile -s -O2 -d1 fsa.scm)
+(compile -profile -s -O2 -d1 iadfa.scm)
+(install-extension
+  ; Name of your extension:
+  'finenight
+  ; Files to install for your extension:
+  '("fsa.so" "iadfa.so" "fsa.html")
+  ; Assoc list with properties for your extension:
+  '((version 1.2)
+    (documentation "fsa.html")))

@@ -1,10 +1,9 @@
 (define-extension fsa)
-(require-extension utils-scm)
-(require-extension defstruct)
 (require-extension format)
 
-;(load "utils-scm.scm")
-;(load "plt-comp.scm")
+;(require-extension utils-scm)
+
+(load "utils-scm")
 
 ;;(declare (unit fsa))
 

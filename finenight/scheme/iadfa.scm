@@ -1,7 +1,7 @@
 (define-extension iadfa)
-(require-extension fsa)
 ;(require-extension defstruct)
 (load "utils-scm")
+(load "fsa")
 
 ;(load "fsa.scm")
 ;(load "sort.scm")
@@ -79,6 +79,17 @@
 			 (build-iadfa)
 			 words)))
      (iadfa-fsa (replace-or-register iadfa (fsa-initial-node (iadfa-fsa iadfa)))))))
+
+(define gen-iadfa-from-file 
+  (lambda (file)
+    (let ((iadfa (build-iadfa)))
+      (for-each-line-in-file 
+       file
+       (lambda (line)
+	 (display (format "~A ~%" line))
+	 (time (handle-word iadfa 
+		      (string->list line)))))
+      (iadfa-fsa (replace-or-register iadfa (fsa-initial-node (iadfa-fsa iadfa)))))))
 
 
 (define handle-word

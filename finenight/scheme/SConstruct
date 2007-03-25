@@ -15,7 +15,7 @@ env = Environment(tools = ["default", "chicken"], toolpath=["./"])
 # sc-sap (executable binary) made of sc-sap.scm.
 #fsatest = env.ChickenProgram(env, "fsa-test", ["fsa-test.scm", "fsa.scm"])
 #env.Install('/usr/local/bin/', fsatest)
-iadfa_run = env.ChickenProgram(env, "iadfa-run", ["fsa.scm", "iadfa.scm", "iadfa-run.scm"])
+iadfa_run = env.ChickenProgram(env, "iadfa-run", ["fsa.scm", "iadfa.scm", "utils-scm.scm", "iadfa-run.scm"])
 #iadfa = env.ChickenProgram(env, "iadfa-run", ["fsa.scm", "iadfa.scm", "iadfa-run.scm"])
 env.Install('/usr/local/bin/', iadfa_run)
 

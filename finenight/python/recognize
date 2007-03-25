@@ -35,7 +35,7 @@ Mandatory arguments to long options are mandatory for short options too.
 
 def generateIADFA(dictFilename, iadfaFilename):
     debug("loading IADFA code")
-    from finenight.iadfa import IncrementalAdfa
+    from iadfa import IncrementalAdfa
     debug("Reading the dico file.")
     f = open(dictFilename, "r");
 #     words = []
@@ -63,15 +63,15 @@ def debug(output):
 
 
 verbose = False
-config = {"transitionsFile" : "data/levenshtein.dat",
-          "iadfaFile": "data/iadfa.dat",
-	  "dicoFile": "data/test.dico"}
+config = {"transitionsFile" : "../../data/levenshtein.dat",
+          "iadfaFile": "../../data/iadfa.dat",
+	  "dicoFile": "../../data/test.dico"}
 
 
 
 def getTransitionStates(filename, distance):
     
-    from finenight.possibleStates import genTransitions
+    from possibleStates import genTransitions
     transitions = {}
     try:
         debug("Checking for existing transitions file")
@@ -172,11 +172,11 @@ if __name__ == "__main__":
     if len(args) > 0:
         if useFastAlgo is True:
             debug("Using Schulz's algoritm")
-            from finenight.fsc import ErrorTolerantRecognizer
+            from fsc import ErrorTolerantRecognizer
             transitionStates = getTransitionStates(transitionsFile, distance)
         else:
             debug("Using Flazer's algorithm")
-            from finenight.et import ErrorTolerantRecognizer
+            from et import ErrorTolerantRecognizer
 
         etr = ErrorTolerantRecognizer(distance, transitionStates)
         for word in args:

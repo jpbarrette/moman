@@ -48,4 +48,15 @@
 	      (some func (cdr lst))
 	      result)))))
 	    
-	
+       
+(define (for-each-line-in-file filename proc . mode)
+  (with-input-from-file
+   filename
+   (lambda () (apply for-each-line proc (current-input-port) mode))))
+
+(define (for-each-line proc . port+mode)
+  (let while ()
+    (let ((line (apply read-line port+mode)))
+      (unless (eof-object? line)
+        (proc line)
+        (while)))))
