@@ -290,7 +290,7 @@
 
 (define fsa-add-final-node! 
   (lambda (fsa node)
-    (fsa-finals-set! fsa (cons node (fsa-finals fsa)))
+    (fsa-finals-set! fsa (append (fsa-finals fsa) (list node)))
     (node-final-set! node #t)
     fsa))
 
