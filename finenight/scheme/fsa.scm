@@ -1,9 +1,9 @@
 (define-extension fsa)
 (require-extension format)
 
-;(require-extension utils-scm)
+(require-extension utils-scm)
 
-(load "utils-scm")
+;(load "utils-scm.scm")
 
 ;;(declare (unit fsa))
 

@@ -1,9 +1,5 @@
 (require-extension check)
-(load "iadfa")
-
-;(load "iadfa.scm")
-;(require (lib "32.ss" "srfi"))
-;(declare (uses iadfa))
+(require-extension iadfa)
 
 
 (define myfsa (make-empty-fsa 'a))

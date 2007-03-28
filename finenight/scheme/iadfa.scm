@@ -1,7 +1,7 @@
 (define-extension iadfa)
 ;(require-extension defstruct)
-(load "utils-scm")
-(load "fsa")
+(require-extension utils-scm)
+(require-extension fsa)
 
 ;(load "fsa.scm")
 ;(load "sort.scm")
@@ -13,7 +13,8 @@
 (define-record iadfa 
   register
   index ;; this is used for automatic node name generation
-  fsa)
+  fsa
+  final)
 
 ;; This will return the node's last child added.
 (define last-child
@@ -78,7 +79,8 @@
   (lambda ()
     (make-iadfa (make-hash-table) 
 		1
-		(make-empty-fsa 0))))
+		(make-empty-fsa 0)
+		#f)))
   
 (define gen-iadfa 
   (lambda (words)
@@ -134,14 +136,12 @@
 
 (define find-equivalent-final-registered-states
   (lambda (iadfa node)
-    (let ((fsa (iadfa-fsa iadfa)))
-      (some (lambda (other)
-	      (if (equal? (node-label other) (node-label node)) 
-		  #f
-		  (if (node-is-equivalent node other)
-		      other
-		      #f)))
-	    (fsa-finals fsa)))))
+    (if (and (not (eq? (iadfa-final iadfa) #f))
+	    (node-is-equivalent node (iadfa-final iadfa)))
+	(iadfa-final iadfa)
+	(begin 
+	  (iadfa-final-set! iadfa node)
+	  #f))))
 
 
 (define find-equivalent-registered-states
@@ -194,8 +194,6 @@
 	  (delete-parent-to-registered iadfa 
 				       child
 				       (last-child child)))
-      ;(if (has-children? child)
-	;  (delete-branch iadfa (last-child child)))
       (fsa-remove-node! fsa child))
     iadfa))
 
