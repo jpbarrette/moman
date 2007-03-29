@@ -2,6 +2,7 @@
 (require-extension format)
 
 (require-extension utils-scm)
+(require-extension srfi-1)
 
 ;(load "utils-scm.scm")
 
@@ -35,9 +36,10 @@
 ;;(print-struct #t)
 
 (define-record-printer (node x out)
-  (fprintf out "(node ~S ~S)"
+  (fprintf out "(node ~S ~S ~A)"
 	   (node-label x) 
-	   (node-edges2 x)))
+	   (node-edges2 x)
+	   (node-final x)))
 
 
 
@@ -80,32 +82,35 @@
 
 (define node-add-edge!
   (lambda (node input-symbol dst-node)
-    (let ((symbols-map (node-symbols-map node)))
-      (my-hash-table-update! symbols-map 
-			      input-symbol 
-			      (lambda () (list))
-			      (lambda (lst)
-				(cons dst-node lst))))))
+    (hash-table-update!/default (node-symbols-map node)
+			input-symbol 
+			(lambda (lst)
+			  (cons dst-node lst))
+			'())))
+
 
 (define node-remove-edge!
   (lambda (node input-symbol dst-node)
     (let ((symbols-map (node-symbols-map node)))
-      (my-hash-table-update! symbols-map 
-			     input-symbol 
-			     (lambda () '())
-			     (lambda (lst)
-			       (rember lst dst-node)))
+      (if (< 1
+	     (length hash-table-href/default symbols-map input-symbol '()))
+	  (hash-table-update!/default symbols-map 
+			      input-symbol 
+			      (lambda (lst)
+				(delete! dst-node lst eq?))
+			      '())
+	  (hash-table-delete! symbols-map input-symbol))
       node)))
 
 (define node-remove-dst!
   (lambda (node dst-node)
     (let ((symbols-map (node-symbols-map node)))
       (map (lambda (symbol)
-	     (my-hash-table-update! symbols-map 
-				    symbol 
-				    (lambda () '())
-				    (lambda (lst)
-				      (rember lst dst-node))))
+	     (hash-table-update!/default symbols-map 
+				 symbol 
+				 (lambda (lst)
+				   (delete! dst-node lst eq?))
+				 '()))
 	   (node-symbols node)))
     node))
 
@@ -163,12 +168,20 @@
 	  (equal? (node-symbols-map lhs)
 		  (node-symbols-map rhs)))))
 
+(define fsa-node-ancestrors
+  (lambda (fsa label)
+    (map (lambda (parent-label)
+           (get-node fsa parent-label))
+         (hash-table-ref/default (fsa-ancestrors-nodes fsa)
+                                 label
+                                 '()))))
+
 (define fsa-add-edge!
   (lambda (fsa src-label input-symbol dst-label)
     (let ((src-node (my-hash-table-get! (fsa-nodes fsa) src-label (lambda () (make-empty-node src-label))))
 	  (dst-node (my-hash-table-get! (fsa-nodes fsa) dst-label (lambda () (make-empty-node dst-label))))
-	  (ancestrors (hash-table-ref/default (fsa-ancestrors-nodes fsa) dst-label (list))))
-      (if (not (member src-label ancestrors))
+	  (ancestrors (hash-table-ref/default (fsa-ancestrors-nodes fsa) dst-label '())))
+      (if (not (memq src-label ancestrors))
 	  (hash-table-set! (fsa-ancestrors-nodes fsa) dst-label (cons src-label ancestrors)))
       (node-add-edge! src-node input-symbol dst-node)
       fsa)))
@@ -181,31 +194,31 @@
 	     (node-remove-dst! (get-node fsa ancestror) node))
 	   ancestrors)
       (hash-table-delete! (fsa-nodes fsa) label)
-      (fsa-finals-set! fsa (rember (fsa-finals fsa) node))
+      (fsa-finals-set! fsa (delete! node (fsa-finals fsa)))
       fsa)))
 
 (define fsa-remove-edge!
   (lambda (fsa src-label input-symbol dst-label)
     (let ((src-node (my-hash-table-get! (fsa-nodes fsa) src-label (lambda () (make-empty-node src-label))))
 	  (dst-node (my-hash-table-get! (fsa-nodes fsa) dst-label (lambda () (make-empty-node dst-label)))))
-      (my-hash-table-update! (fsa-ancestrors-nodes fsa) 
-			     dst-label 
-			     (lambda () (list))
-			     (lambda (lst)
-			       (rember lst dst-label)))
+      (hash-table-update!/default (fsa-ancestrors-nodes fsa) 
+			  dst-label 
+			  (lambda (lst)
+			    (delete! dst-label lst eq?))
+			  '())
       (node-remove-edge! src-node input-symbol dst-node)
       fsa)))
   
 (define build-fsa
   (lambda (initial-label edges finals)
-    (let ((fsa (reduce (lambda (fsa edge)
-			 (fsa-add-edge! fsa (car edge) (cadr edge) (caddr edge)))
-		       (make-empty-fsa initial-label)
-		       edges)))
-    (reduce (lambda (fsa final)
-	      (fsa-add-final! fsa final))
-	    fsa
-	    finals))))
+    (let ((fsa (fold (lambda (edge fsa)
+			     (fsa-add-edge! fsa (car edge) (cadr edge) (caddr edge)))
+			   (make-empty-fsa initial-label)
+			   edges)))
+      (fold (lambda (final fsa)
+              (fsa-add-final! fsa final))
+            fsa
+            finals))))
 
 (define make-empty-fsa
   (lambda (initial-label)
@@ -290,7 +303,7 @@
 
 (define fsa-add-final-node! 
   (lambda (fsa node)
-    (fsa-finals-set! fsa (append (fsa-finals fsa) (list node)))
+    (fsa-finals-set! fsa (cons node (fsa-finals fsa)))
     (node-final-set! node #t)
     fsa))
 
@@ -309,8 +322,9 @@
 	  (map (lambda (x) 
 		 (display (format " \"~A\"" (node-label x))
 			  p))
-	       (fsa-finals fsa))))
-     (display (format ";~%~%  node [shape = circle];~% ")
+	       (fsa-finals fsa))
+	  (display ";")))
+     (display (format "~%~%  node [shape = circle];~% ")
 	      p)
      (map (lambda (label)
 	    (display (format " \"~A\"" label)

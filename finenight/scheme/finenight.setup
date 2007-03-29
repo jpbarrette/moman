@@ -1,6 +1,7 @@
 (compile -profile -s -O2 -d1 utils-scm.scm)
 (compile -profile -s -O2 -d1 fsa.scm)
 (compile -profile -s -O2 -d1 iadfa.scm)
+(compile -profile -s -O2 -d1 iadfa-run.scm)
 (install-extension
   ; Name of your extension:
   'finenight

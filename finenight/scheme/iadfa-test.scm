@@ -35,10 +35,7 @@
 (check (node-label append-node) => 'append)
 (check (string->list "append") => (cdr append-cp-a))
 
-;; check for reduce
-(check (reduce (lambda (v1 v2) (+ v1 v2)) 1 (list 2 3 4 5)) => 15)
-
-(define my-fsa (gen-iadfa '("appendice" "bateau" "brateau" "cracher" "croteau")))
+(define my-fsa (gen-iadfa '("appendice" "bateau" "brateau" "cracher" "crateau" "croteau")))
 ;(define my-iadfa (handle-word (build-iadfa) (string->list "appendice")))
 (check (accept? my-fsa (string->list "appendice")) => #t)
 (check (accept? my-fsa (string->list "bateau")) => #t)
