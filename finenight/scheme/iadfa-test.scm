@@ -35,23 +35,14 @@
 (check (node-label append-node) => 'append)
 (check (string->list "append") => (cdr append-cp-a))
 
-(define my-fsa (gen-iadfa '("appendice" "bateau" "brateau" "cracher" "crateau" "croteau")))
+(define my-fsa (gen-iadfa '("append" "appendice" "bateau" "brateau" "cracher" "crateau" "croteau")))
 ;(define my-iadfa (handle-word (build-iadfa) (string->list "appendice")))
 (check (accept? my-fsa (string->list "appendice")) => #t)
 (check (accept? my-fsa (string->list "bateau")) => #t)
 (check (accept? my-fsa (string->list "appendic")) => #f)
 
-(check (node-final (get-node my-fsa 9)) => #t)
+(check (node-final (get-node my-fsa 6)) => #t)
 
 (graphviz-export my-fsa)
 
 
-;; (display (gen-iadfa '("allo"  "bateau")))
-;; (define b (list 'z 'y 'x 'w 'v))
-;; (define myfsa (make-fsa 'a (list 'b 'c) (list (list 'a 'b 'b) (list 'a 'c 'c))))
-
-;; (check (transition myfsa 'a 'b) => (list 'b))
-;; (check (final? myfsa 'a) => #f)
-;; (check (final? myfsa 'b) => #t)
-;; (check (final? myfsa 'c) => #t)
-;; (check (eval (car (transition myfsa 'a 'b))) => (list 'z 'y 'x 'w 'v))

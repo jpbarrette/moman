@@ -4,27 +4,6 @@
 (require-extension utils-scm)
 (require-extension srfi-1)
 
-;(load "utils-scm.scm")
-
-;;(declare (unit fsa))
-
-;; (define edge 
-;;   (lambda (source-node input-symbol destination-node)
-;;     (lambda (selector)
-;;       (selector source-node input-symbol destination-node))))
-
-;; (define source-node
-;;   (lambda (edge)
-;;     (car edge)))
-
-;; (define input-symbol
-;;   (lambda (edge)
-;;     (car (cdr edge))))
-
-;; (define destination-node
-;;   (lambda (edge)
-;;     (car (cdr (cdr edge)))))
-
 
 ;; the node consists of a label and a map a symbol to 
 ;; a destination object. 
@@ -199,14 +178,16 @@
 
 (define fsa-remove-edge!
   (lambda (fsa src-label input-symbol dst-label)
-    (let ((src-node (my-hash-table-get! (fsa-nodes fsa) src-label (lambda () (make-empty-node src-label))))
-	  (dst-node (my-hash-table-get! (fsa-nodes fsa) dst-label (lambda () (make-empty-node dst-label)))))
-      (hash-table-update!/default (fsa-ancestrors-nodes fsa) 
-			  dst-label 
-			  (lambda (lst)
-			    (delete! dst-label lst eq?))
-			  '())
-      (node-remove-edge! src-node input-symbol dst-node)
+    (let ((src-node (hash-table-href/default (fsa-nodes fsa) src-label #f))
+	  (dst-node (hash-table-href/default (fsa-nodes fsa) dst-label #f)))
+      (if (and src-node dst-node)
+          (begin 
+            (hash-table-update!/default (fsa-ancestrors-nodes fsa) 
+                                        dst-label 
+                                        (lambda (lst)
+                                          (delete! dst-label lst eq?))
+                                        '())
+            (node-remove-edge! src-node input-symbol dst-node)))
       fsa)))
   
 (define build-fsa

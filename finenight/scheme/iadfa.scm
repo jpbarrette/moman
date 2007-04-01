@@ -38,7 +38,7 @@
     (if (eq? 0 (length word))
 	(cons node prefix)
 	(let ((next-node (node-transition node (car word))))
-	  (if (null? next-node)
+	  (if (or (null? next-node) (final? (car next-node)))
 	      (cons node prefix)
 	      (common-prefix (cdr word)
 			     (car next-node)
@@ -114,6 +114,17 @@
       (if (has-children? last-node)
 	  (replace-or-register iadfa last-node))
       (add-suffix last-node current-suffix iadfa)
+      iadfa)))
+
+(define my-handle-word
+  (lambda (iadfa word)
+    (let* ((fsa (iadfa-fsa iadfa))
+	   (common (common-prefix word (fsa-initial-node fsa) '()))
+	   (common-prefix (cdr common))
+	   (last-node (car common))
+	   (current-suffix (list-tail word (length common-prefix))))
+      (add-suffix last-node current-suffix iadfa)
+      (my-replace-or-register iadfa (last-child last-node))
       iadfa)))
 
 
