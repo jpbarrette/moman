@@ -31,6 +31,10 @@
   (lambda (node)
     (hash-table-keys (node-symbols-map node))))
 
+(define node-destinations
+  (lambda (node)
+    (apply append (hash-table-values (node-symbols-map node)))))
+
 (define node-edges
   (lambda (node)
     (letrec ((label (node-label node))
@@ -72,7 +76,7 @@
   (lambda (node input-symbol dst-node)
     (let ((symbols-map (node-symbols-map node)))
       (if (< 1
-	     (length hash-table-href/default symbols-map input-symbol '()))
+	     (length hash-table-ref/default symbols-map input-symbol '()))
 	  (hash-table-update!/default symbols-map 
 			      input-symbol 
 			      (lambda (lst)
@@ -142,50 +146,63 @@
 
 (define node-is-equivalent
   (lambda (lhs rhs)
-      (if (not (equal? (node-final lhs) (node-final rhs)))
+      (if (not (eq? (node-final lhs) (node-final rhs)))
 	  #f
-	  (equal? (node-symbols-map lhs)
-		  (node-symbols-map rhs)))))
+          (let ((lhs-map (node-symbols-map lhs))
+                (rhs-map (node-symbols-map rhs)))
+            (and (eq? (hash-table-size lhs-map) (hash-table-size rhs-map))
+                 (equal? lhs-map rhs-map))))))
+		  
+
 
 (define fsa-node-ancestrors
   (lambda (fsa label)
-    (map (lambda (parent-label)
-           (get-node fsa parent-label))
-         (hash-table-ref/default (fsa-ancestrors-nodes fsa)
-                                 label
-                                 '()))))
+    (hash-table-ref/default (fsa-ancestrors-nodes fsa)
+                            label
+                            '())))
+
+(define fsa-remove-ancestror!
+  (lambda (fsa node)
+    (map (lambda (child)
+           (hash-table-update!/default (fsa-ancestrors-nodes fsa)
+                                       (node-label child)
+                                       (lambda (lst)
+                                         (delete! node lst))
+                                       '()))
+         (node-destinations node))))
 
 (define fsa-add-edge!
   (lambda (fsa src-label input-symbol dst-label)
     (let ((src-node (my-hash-table-get! (fsa-nodes fsa) src-label (lambda () (make-empty-node src-label))))
 	  (dst-node (my-hash-table-get! (fsa-nodes fsa) dst-label (lambda () (make-empty-node dst-label))))
 	  (ancestrors (hash-table-ref/default (fsa-ancestrors-nodes fsa) dst-label '())))
-      (if (not (memq src-label ancestrors))
-	  (hash-table-set! (fsa-ancestrors-nodes fsa) dst-label (cons src-label ancestrors)))
+      (if (not (memq src-node ancestrors))
+	  (hash-table-set! (fsa-ancestrors-nodes fsa) dst-label (cons src-node ancestrors)))
       (node-add-edge! src-node input-symbol dst-node)
       fsa)))
 
 (define fsa-remove-node!
   (lambda (fsa node)
     (let* ((label (node-label node))
-	   (ancestrors (hash-table-ref/default (fsa-ancestrors-nodes fsa) label (list))))
+	   (ancestrors (hash-table-ref/default (fsa-ancestrors-nodes fsa) label '())))
       (map (lambda (ancestror)
-	     (node-remove-dst! (get-node fsa ancestror) node))
+	     (node-remove-dst! ancestror node))
 	   ancestrors)
       (hash-table-delete! (fsa-nodes fsa) label)
+      (fsa-remove-ancestror! fsa node)
       (fsa-finals-set! fsa (delete! node (fsa-finals fsa)))
       fsa)))
 
 (define fsa-remove-edge!
   (lambda (fsa src-label input-symbol dst-label)
-    (let ((src-node (hash-table-href/default (fsa-nodes fsa) src-label #f))
-	  (dst-node (hash-table-href/default (fsa-nodes fsa) dst-label #f)))
+    (let ((src-node (hash-table-ref/default (fsa-nodes fsa) src-label #f))
+	  (dst-node (hash-table-ref/default (fsa-nodes fsa) dst-label #f)))
       (if (and src-node dst-node)
           (begin 
             (hash-table-update!/default (fsa-ancestrors-nodes fsa) 
                                         dst-label 
                                         (lambda (lst)
-                                          (delete! dst-label lst eq?))
+                                          (delete! dst-node lst eq?))
                                         '())
             (node-remove-edge! src-node input-symbol dst-node)))
       fsa)))
@@ -203,11 +220,18 @@
 
 (define make-empty-fsa
   (lambda (initial-label)
-    (make-fsa initial-label (make-hash-table) (make-hash-table) (list))))
+    (let ((fsa (make-fsa initial-label (make-hash-table) (make-hash-table) (list))))
+      (my-hash-table-get! (fsa-nodes fsa) initial-label (lambda () (make-empty-node initial-label)))
+      fsa)))
 
 (define get-node 
   (lambda (fsa node-label) 
-    (my-hash-table-get! (fsa-nodes fsa) node-label (lambda () (make-empty-node node-label)))))
+    (hash-table-ref/default (fsa-nodes fsa) node-label #f)))
+
+;(define get-node 
+;  (lambda (fsa node-label) 
+;    (my-hash-table-get! (fsa-nodes fsa) node-label (lambda () (make-empty-node node-label)))))
+
 
 (define get-state 
   (lambda (fsa label) 

@@ -161,13 +161,15 @@
   (lambda (iadfa node)
     (let ((fsa (iadfa-fsa iadfa)))
       (any (lambda (other)
-	     (if (and (not (equal? (node-label other) (node-label node)))
+	     (if (and (not (eq? other node))
 		      (node-is-equivalent node other))
 		 other
 		 #f))
-           (fsa-node-ancestrors
-               fsa
-               (node-label (last-child node)))))))
+           (begin
+             (let ((ancestrors (fsa-node-ancestrors fsa (node-label (last-child node)))))
+               (display (format "~S ~%" ancestrors))
+               ancestrors))))))
+             
 
 (define handle-equivalent-states
   (lambda (iadfa node child)
