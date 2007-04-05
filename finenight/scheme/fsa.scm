@@ -76,7 +76,7 @@
   (lambda (node input-symbol dst-node)
     (let ((symbols-map (node-symbols-map node)))
       (if (< 1
-	     (length hash-table-ref/default symbols-map input-symbol '()))
+	     (length (hash-table-ref/default symbols-map input-symbol '())))
 	  (hash-table-update!/default symbols-map 
 			      input-symbol 
 			      (lambda (lst)
@@ -109,7 +109,7 @@
 ;; initial-state speak of itself.
 ;; final-states is a list of nodes considered as final
 ;; transitions is a list of 3-tuple. (source-node input-symbol destination-node)
-(define-record fsa initial-state nodes ancestrors-nodes finals)
+(define-record fsa initial-state nodes finals)
 
 (define-record-printer (fsa x out)
   (fprintf out "(fsa ~S ~S ~S)"
@@ -155,41 +155,33 @@
 		  
 
 
-(define fsa-node-ancestrors
-  (lambda (fsa label)
-    (hash-table-ref/default (fsa-ancestrors-nodes fsa)
-                            label
-                            '())))
+;; (define fsa-node-ancestrors
+;;   (lambda (fsa label)
+;;     (hash-table-ref/default (fsa-ancestrors-nodes fsa)
+;;                             label
+;;                             '())))
 
-(define fsa-remove-ancestror!
-  (lambda (fsa node)
-    (map (lambda (child)
-           (hash-table-update!/default (fsa-ancestrors-nodes fsa)
-                                       (node-label child)
-                                       (lambda (lst)
-                                         (delete! node lst))
-                                       '()))
-         (node-destinations node))))
+;; (define fsa-remove-ancestror!
+;;   (lambda (fsa node)
+;;     (map (lambda (child)
+;;            (hash-table-update!/default (fsa-ancestrors-nodes fsa)
+;;                                        (node-label child)
+;;                                        (lambda (lst)
+;;                                          (delete! node lst))
+;;                                        '()))
+;;          (node-destinations node))))
 
 (define fsa-add-edge!
   (lambda (fsa src-label input-symbol dst-label)
     (let ((src-node (my-hash-table-get! (fsa-nodes fsa) src-label (lambda () (make-empty-node src-label))))
-	  (dst-node (my-hash-table-get! (fsa-nodes fsa) dst-label (lambda () (make-empty-node dst-label))))
-	  (ancestrors (hash-table-ref/default (fsa-ancestrors-nodes fsa) dst-label '())))
-      (if (not (memq src-node ancestrors))
-	  (hash-table-set! (fsa-ancestrors-nodes fsa) dst-label (cons src-node ancestrors)))
+	  (dst-node (my-hash-table-get! (fsa-nodes fsa) dst-label (lambda () (make-empty-node dst-label)))))
       (node-add-edge! src-node input-symbol dst-node)
       fsa)))
 
 (define fsa-remove-node!
   (lambda (fsa node)
-    (let* ((label (node-label node))
-	   (ancestrors (hash-table-ref/default (fsa-ancestrors-nodes fsa) label '())))
-      (map (lambda (ancestror)
-	     (node-remove-dst! ancestror node))
-	   ancestrors)
+    (let* ((label (node-label node)))
       (hash-table-delete! (fsa-nodes fsa) label)
-      (fsa-remove-ancestror! fsa node)
       (fsa-finals-set! fsa (delete! node (fsa-finals fsa)))
       fsa)))
 
@@ -198,13 +190,7 @@
     (let ((src-node (hash-table-ref/default (fsa-nodes fsa) src-label #f))
 	  (dst-node (hash-table-ref/default (fsa-nodes fsa) dst-label #f)))
       (if (and src-node dst-node)
-          (begin 
-            (hash-table-update!/default (fsa-ancestrors-nodes fsa) 
-                                        dst-label 
-                                        (lambda (lst)
-                                          (delete! dst-node lst eq?))
-                                        '())
-            (node-remove-edge! src-node input-symbol dst-node)))
+          (node-remove-edge! src-node input-symbol dst-node))
       fsa)))
   
 (define build-fsa
@@ -220,7 +206,7 @@
 
 (define make-empty-fsa
   (lambda (initial-label)
-    (let ((fsa (make-fsa initial-label (make-hash-table) (make-hash-table) (list))))
+    (let ((fsa (make-fsa initial-label (make-hash-table) (list))))
       (my-hash-table-get! (fsa-nodes fsa) initial-label (lambda () (make-empty-node initial-label)))
       fsa)))
 

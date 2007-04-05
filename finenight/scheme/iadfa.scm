@@ -145,6 +145,13 @@
 	    (fsa-finals fsa)))))
 
 
+(define iadfa-node-ancestrors
+  (lambda (iadfa label)
+    (hash-table-ref/default (iadfa-register iadfa) 
+                            label
+                            '())))
+
+
 (define find-equivalent-states
   (lambda (iadfa node)
     (let ((fsa (iadfa-fsa iadfa)))
@@ -153,7 +160,7 @@
 		      (node-is-equivalent node other))
 		 other
 		 #f))
-           (fsa-node-ancestrors fsa (node-label (last-child node)))))))
+           (iadfa-node-ancestrors iadfa (node-label (last-child node)))))))
              
 
 (define handle-equivalent-states
@@ -162,8 +169,8 @@
 	   (equivalent (equivalent-registered-states iadfa child)))
       (if equivalent
 	  (begin
-	    (delete-branch iadfa child)
-	    (replace-last-child node equivalent iadfa))
+	    (replace-last-child node equivalent iadfa)
+	    (delete-branch iadfa child))
           (mark-as-registered iadfa node child))
       iadfa)))
 
@@ -180,7 +187,9 @@
 (define replace-last-child
   (lambda (node new-child iadfa)
     (let* ((fsa (iadfa-fsa iadfa))
-	   (input (last-input node)))
+	   (input (last-input node))
+           (current-child (last-child node)))
+      (node-remove-edge! node input current-child)
       (fsa-add-edge! fsa (node-label node) input (node-label new-child))
       (append-parent-to-registered iadfa node new-child)
       node)))
