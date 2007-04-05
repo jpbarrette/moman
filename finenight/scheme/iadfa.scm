@@ -14,8 +14,7 @@
 (define-record iadfa 
   register
   index ;; this is used for automatic node name generation
-  fsa
-  final)
+  fsa)
 
 ;; This will return the node's last child added.
 (define last-child
@@ -38,7 +37,7 @@
     (if (eq? 0 (length word))
 	(cons node prefix)
 	(let ((next-node (node-transition node (car word))))
-	  (if (or (null? next-node) (final? (car next-node)))
+	  (if (null? next-node)
 	      (cons node prefix)
 	      (common-prefix (cdr word)
 			     (car next-node)
@@ -81,8 +80,7 @@
   (lambda ()
     (make-iadfa (make-hash-table) 
 		1
-		(make-empty-fsa 0)
-		#f)))
+		(make-empty-fsa 0))))
   
 (define gen-iadfa 
   (lambda (words)
@@ -116,18 +114,6 @@
       (add-suffix last-node current-suffix iadfa)
       iadfa)))
 
-(define my-handle-word
-  (lambda (iadfa word)
-    (let* ((fsa (iadfa-fsa iadfa))
-	   (common (common-prefix word (fsa-initial-node fsa) '()))
-	   (common-prefix (cdr common))
-	   (last-node (car common))
-	   (current-suffix (list-tail word (length common-prefix))))
-      (add-suffix last-node current-suffix iadfa)
-      (my-replace-or-register iadfa (last-child last-node))
-      iadfa)))
-
-
 (define replace-or-register
   (lambda (iadfa node)
     (let* ((fsa (iadfa-fsa iadfa))
@@ -149,12 +135,14 @@
 
 (define find-equivalent-final-states
   (lambda (iadfa node)
-    (if (and (not (eq? (iadfa-final iadfa) #f))
-	    (node-is-equivalent node (iadfa-final iadfa)))
-	(iadfa-final iadfa)
-	(begin 
-	  (iadfa-final-set! iadfa node)
-	  #f))))
+    (let ((fsa (iadfa-fsa iadfa)))
+      (any (lambda (other)
+	      (if (equal? (node-label other) (node-label node)) 
+		  #f
+		  (if (node-is-equivalent node other)
+		      other
+		      #f)))
+	    (fsa-finals fsa)))))
 
 
 (define find-equivalent-states
@@ -165,10 +153,7 @@
 		      (node-is-equivalent node other))
 		 other
 		 #f))
-           (begin
-             (let ((ancestrors (fsa-node-ancestrors fsa (node-label (last-child node)))))
-               (display (format "~S ~%" ancestrors))
-               ancestrors))))))
+           (fsa-node-ancestrors fsa (node-label (last-child node)))))))
              
 
 (define handle-equivalent-states
@@ -179,7 +164,7 @@
 	  (begin
 	    (delete-branch iadfa child)
 	    (replace-last-child node equivalent iadfa))
-	  (mark-as-registered iadfa node child))
+          (mark-as-registered iadfa node child))
       iadfa)))
 
 

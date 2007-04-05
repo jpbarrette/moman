@@ -142,7 +142,7 @@ class Nfa:
         f = open(filename, 'w')
         f.write("digraph G {\nrankdir=LR;")
         f.write("size = \"" + str(size[0]) + "," + str(size[1]) + "\";")
-	f.write("rotate = 90;")
+	#f.write("rotate = 90;")
 
         if self.finalStates:
             f.write("node [shape = doublecircle];\n")

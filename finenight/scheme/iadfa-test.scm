@@ -35,7 +35,7 @@
 (check (node-label append-node) => 'append)
 (check (string->list "append") => (cdr append-cp-a))
 
-(define my-fsa (gen-iadfa '("append" "appendice" "bateau" "brateau" "cracher" "crateau" "croteau")))
+(define my-fsa (gen-iadfa '("append" "appendice" "bateau" "brateau" "cracher" "crateau" "croteau" "croteaunize")))
 ;(define my-iadfa (handle-word (build-iadfa) (string->list "appendice")))
 (check (accept? my-fsa (string->list "appendice")) => #t)
 (check (accept? my-fsa (string->list "bateau")) => #t)
