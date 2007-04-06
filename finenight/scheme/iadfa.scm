@@ -46,7 +46,20 @@
 (define marked-as-registered
   (lambda (iadfa state)
     (hash-table-exists? (iadfa-register iadfa) state)))
-  
+
+(define iadfa-state-ancestrors
+  (lambda (iadfa label)
+    (hash-table-ref/default (iadfa-register iadfa) 
+                            label
+                            '())))
+
+(define iadfa-state-ancestrors-states
+  (lambda (iadfa label)
+    (map (lambda (node)
+           (node-label node))
+         (iadfa-state-ancestrors iadfa label))))
+    
+
 (define append-parent-to-registered
   (lambda (iadfa parent child)
     (hash-table-update!/default (iadfa-register iadfa) 
@@ -88,17 +101,21 @@
                          (handle-word iadfa (string->list word)))
                        (build-iadfa)
                        words)))
-      (iadfa-fsa (replace-or-register iadfa (fsa-initial-node (iadfa-fsa iadfa)))))))
+      (replace-or-register iadfa (fsa-initial-node (iadfa-fsa iadfa))))))
 
 (define gen-iadfa-from-file 
   (lambda (file)
-    (let ((iadfa (build-iadfa)))
+    (let ((iadfa (build-iadfa))
+          (last-word #f))
       (for-each-line-in-file 
        file
        (lambda (line)
+         (if (and (not (eq? #f last-word)) (not (string<? last-word line)))
+             (display (format "~A not smaller than ~A ~%" last-word line)))
 	 (display (format "~A ~%" line))
 	 (handle-word iadfa 
-		      (string->list line))))
+		      (string->list line))
+         (set! last-word line)))
       (iadfa-fsa (replace-or-register iadfa (fsa-initial-node (iadfa-fsa iadfa)))))))
 
 

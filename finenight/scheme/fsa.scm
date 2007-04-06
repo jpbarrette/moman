@@ -144,14 +144,20 @@
 ;; 	    (cond ((not (equal? (length lhs-edges) (length rhs-edges))) #f)
 ;; 		  (else (edges-are-equivalent lhs-edges rhs-edges))))))))
 
+
+(define map-equal?
+  (lambda (lhs rhs)
+    (and (eq? (hash-table-size lhs) (hash-table-size rhs))
+         (equal? lhs rhs))))
+		  
+
 (define node-is-equivalent
   (lambda (lhs rhs)
       (if (not (eq? (node-final lhs) (node-final rhs)))
 	  #f
           (let ((lhs-map (node-symbols-map lhs))
                 (rhs-map (node-symbols-map rhs)))
-            (and (eq? (hash-table-size lhs-map) (hash-table-size rhs-map))
-                 (equal? lhs-map rhs-map))))))
+            (map-equal? lhs-map rhs-map)))))
 		  
 
 
@@ -304,8 +310,8 @@
     (let ((p (open-output-file "test.dot")))
      (display (format "digraph G {~%  rankdir = LR;~%  size = \"8, 10\";~%") 
 	      p)
-     (display (format "  rotate = 90;~%")
-	      p)
+     ;(display (format "  rotate = 90;~%")
+     ;	      p)
      (if (not (null? (fsa-finals fsa)))
 	 (begin
 	  (display (format "~%  node [shape = doublecircle];~% ")
