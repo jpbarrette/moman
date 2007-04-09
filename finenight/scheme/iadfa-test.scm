@@ -35,12 +35,15 @@
 (check (node-label append-node) => 'append)
 (check (string->list "append") => (cdr append-cp-a))
 
-(define my-iadfa (gen-iadfa '("append" "appendice" "bateau" "batis" "batise" "batisise" "brateau" "cracher" "crateau" "crateauzise" "croteau" "croteaunize")))
+(define my-iadfa (gen-iadfa '("append" "appendice"
+                              "bappend" "bappendice"
+                              "bateau"  "batisa" "batise"
+                              "brateau" "cracher")))
 (define my-fsa (iadfa-fsa my-iadfa))
 
-(display (format "~A~%" (iadfa-state-ancestrors-states my-iadfa 9)))
-(display (format "~A~%" (iadfa-state-ancestrors-states my-iadfa 8)))
-(display (format "~A~%" (iadfa-state-ancestrors-states my-iadfa 12)))
+;(display (format "~A~%" (iadfa-state-ancestrors-states my-iadfa 9)))
+;(display (format "~A~%" (iadfa-state-ancestrors-states my-iadfa 8)))
+;(display (format "~A~%" (iadfa-state-ancestrors-states my-iadfa 12)))
 
 ;(define my-iadfa (handle-word (build-iadfa) (string->list "appendice")))
 (check (accept? my-fsa (string->list "appendice")) => #t)

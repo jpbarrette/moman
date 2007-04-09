@@ -47,39 +47,68 @@
   (lambda (iadfa state)
     (hash-table-exists? (iadfa-register iadfa) state)))
 
-(define iadfa-state-ancestrors
-  (lambda (iadfa label)
-    (hash-table-ref/default (iadfa-register iadfa) 
-                            label
-                            '())))
-
-(define iadfa-state-ancestrors-states
-  (lambda (iadfa label)
-    (map (lambda (node)
-           (node-label node))
-         (iadfa-state-ancestrors iadfa label))))
+;(define iadfa-state-ancestrors
+;  (lambda (iadfa label)
     
 
+(define iadfa-node-ancestrors
+  (lambda (iadfa label input)
+    (let ((register (iadfa-register iadfa)))
+      (if (hash-table-exists? register label)
+          (hash-table-ref/default (hash-table-ref register label)
+                                  input
+                                  '())))))
+
+
 (define append-parent-to-registered
-  (lambda (iadfa parent child)
+  (lambda (iadfa parent input child)
     (hash-table-update!/default (iadfa-register iadfa) 
 			(node-label child)
-			(lambda (lst)
-			  (cons parent lst))
-			'())))
+			(lambda (hash)
+			  (hash-table-update!/default hash
+                                                      input
+                                                      (lambda (lst)
+                                                        (cons parent lst))
+                                                      '())
+                          hash)
+			(make-hash-table))))
 
 
 (define delete-parent-to-registered
-  (lambda (iadfa parent child)
-    (hash-table-update!/default (iadfa-register iadfa) 
-			(node-label child)
-			(lambda (lst)
-			  (delete! parent lst eq?))
-			'())))
+  (lambda (iadfa parent input child)
+    (let ((register (iadfa-register iadfa)))
+      (if (hash-table-exists? register (node-label child))
+          (hash-table-update! register
+                              (node-label child)
+                              (lambda (hash)
+                                (hash-table-update!/default hash
+                                                            input
+                                                            (lambda (lst)
+                                                              (delete! parent lst eq?))
+                                                            '())
+                                hash))))))
+                              
+    
+(define delete-parent-to-registered-childs
+  (lambda (iadfa node)
+    (let ((symbols-map (node-symbols-map node)))
+;      (if (eq? 1 (hash-table-size symbols-map))
+      (hash-table-walk
+       symbols-map
+       (lambda (symbol destinations)
+         (map (lambda (dst)
+                (delete-parent-to-registered iadfa
+                                             node
+                                             symbol
+                                             dst))
+              destinations))))))
 
 (define mark-as-registered
   (lambda (iadfa parent child)
-    (append-parent-to-registered iadfa parent child)))
+    (append-parent-to-registered iadfa
+                                 parent
+                                 (last-input parent)
+                                 child)))
 
 
 (define generate-state
@@ -162,13 +191,6 @@
 	    (fsa-finals fsa)))))
 
 
-(define iadfa-node-ancestrors
-  (lambda (iadfa label)
-    (hash-table-ref/default (iadfa-register iadfa) 
-                            label
-                            '())))
-
-
 (define find-equivalent-states
   (lambda (iadfa node)
     (let ((fsa (iadfa-fsa iadfa)))
@@ -177,7 +199,9 @@
 		      (node-is-equivalent node other))
 		 other
 		 #f))
-           (iadfa-node-ancestrors iadfa (node-label (last-child node)))))))
+           (iadfa-node-ancestrors iadfa
+                                  (node-label (last-child node))
+                                  (last-input node))))))
              
 
 (define handle-equivalent-states
@@ -208,7 +232,7 @@
            (current-child (last-child node)))
       (node-remove-edge! node input current-child)
       (fsa-add-edge! fsa (node-label node) input (node-label new-child))
-      (append-parent-to-registered iadfa node new-child)
+      (append-parent-to-registered iadfa node input new-child)
       node)))
 
 
@@ -218,6 +242,7 @@
       (if (has-children? child)
 	  (delete-parent-to-registered iadfa 
 				       child
+                                       (last-input child)
 				       (last-child child)))
       (fsa-remove-node! fsa child))
     iadfa))
@@ -226,6 +251,7 @@
   (lambda (node current-suffix iadfa)
     (let ((fsa (iadfa-fsa iadfa))
 	  (last-node node))
+      (delete-parent-to-registered-childs iadfa node)
       (fold (lambda (input fsa)
               (let ((new-state (generate-state iadfa)))
                 (fsa-add-edge! fsa (node-label last-node) input new-state)
