@@ -25,6 +25,9 @@
 
 
 ;; This returns the last node's symbol (alphabetical order)
+;;
+;; We rely on the fact that hash-table-keys returns a reversed
+;; sorted list of the keys.
 (define last-input
   (lambda (node)
     (car (hash-table-keys (node-symbols-map node)))))
