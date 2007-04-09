@@ -23,6 +23,11 @@
     (let ((lst-node (node-transition node (last-input node))))
       (car lst-node))))
 
+(define last-child-for-input
+  (lambda (node input)
+    (let ((lst-node (node-transition node input)))
+      (car lst-node))))
+
 
 ;; This returns the last node's symbol (alphabetical order)
 ;;
@@ -217,15 +222,16 @@
 
 (define find-equivalent-states
   (lambda (iadfa node)
-    (let ((fsa (iadfa-fsa iadfa)))
+    (let ((fsa (iadfa-fsa iadfa))
+          (input (last-input node)))
       (any (lambda (other)
 	     (if (and (not (eq? other node))
 		      (eq? (node-final node) (node-final other)))
 		 other
 		 #f))
            (iadfa-node-ancestrors iadfa
-                                  (node-label (last-child node))
-                                  (last-input node))))))
+                                  (node-label (last-child-for-input node input))
+                                  input)))))
 
 
 (define handle-equivalent-states
@@ -253,7 +259,7 @@
   (lambda (node new-child iadfa)
     (let* ((fsa (iadfa-fsa iadfa))
 	   (input (last-input node))
-           (current-child (last-child node)))
+           (current-child (last-child-for-input node input)))
       (node-remove-edge! node input current-child)
       (node-add-edge! node input new-child)
       (append-parent-to-registered iadfa node input new-child)
@@ -264,11 +270,11 @@
   (lambda (iadfa child)
     (let ((fsa (iadfa-fsa iadfa)))
       (if (has-children? child)
-	  (delete-parent-to-registered iadfa 
-				       child
-                                       (last-input child)
-				       (last-child child)))
-                                        ;(fsa-remove-node! fsa child))
+          (let ((input (last-input)))
+            (delete-parent-to-registered iadfa 
+                                         child
+                                         input
+                                         (last-child-for-input child input))))
       iadfa)))
 
 (define add-suffix
