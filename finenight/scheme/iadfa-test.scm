@@ -40,18 +40,29 @@
                               "bateau"  "batisa" "batise"
                               "brateau" "cracher")))
 (define my-fsa (iadfa-fsa my-iadfa))
-
-;(display (format "~A~%" (iadfa-state-ancestrors-states my-iadfa 9)))
-;(display (format "~A~%" (iadfa-state-ancestrors-states my-iadfa 8)))
-;(display (format "~A~%" (iadfa-state-ancestrors-states my-iadfa 12)))
-
-;(define my-iadfa (handle-word (build-iadfa) (string->list "appendice")))
+(check (sort (iadfa-state-ancestrors my-iadfa 9) <) => '(8 22 39))
+(check (sort (iadfa-state-ancestrors my-iadfa 8) <) => '(7))
+(check (sort (iadfa-state-ancestrors my-iadfa 24) <) => '())
 (check (accept? my-fsa (string->list "appendice")) => #t)
 (check (accept? my-fsa (string->list "bateau")) => #t)
 (check (accept? my-fsa (string->list "appendic")) => #f)
-
 (check (node-final (get-node my-fsa 6)) => #t)
 
 (graphviz-export my-fsa)
+
+
+
+
+(define my-iadfa (gen-iadfa '("appendice" "appendicee"
+                              "bappendice" "bappendicee")))
+(define my-fsa (iadfa-fsa my-iadfa))
+;(check (sort (iadfa-state-ancestrors my-iadfa 9) <) => '(8 22 39))
+;(check (sort (iadfa-state-ancestrors my-iadfa 8) <) => '(7))
+;(check (sort (iadfa-state-ancestrors my-iadfa 24) <) => '())
+
+
+
+;(define my-iadfa (handle-word (build-iadfa) (string->list "appendice")))
+
 
 

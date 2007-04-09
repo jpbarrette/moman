@@ -47,8 +47,18 @@
   (lambda (iadfa state)
     (hash-table-exists? (iadfa-register iadfa) state)))
 
-;(define iadfa-state-ancestrors
-;  (lambda (iadfa label)
+(define iadfa-state-ancestrors
+  (lambda (iadfa label)
+    (let ((register (iadfa-register iadfa)))
+      (if (hash-table-exists? register label)
+          (hash-table-fold (hash-table-ref register label)
+                           (lambda (key nodes ancestrors)
+                             (append (map
+                                      (lambda (node)
+                                        (node-label node)) nodes)
+                                     ancestrors))
+                           '())
+          '()))))
     
 
 (define iadfa-node-ancestrors
@@ -57,21 +67,23 @@
       (if (hash-table-exists? register label)
           (hash-table-ref/default (hash-table-ref register label)
                                   input
-                                  '())))))
+                                  '())
+          '()))))
 
 
 (define append-parent-to-registered
   (lambda (iadfa parent input child)
-    (hash-table-update!/default (iadfa-register iadfa) 
-			(node-label child)
-			(lambda (hash)
-			  (hash-table-update!/default hash
-                                                      input
-                                                      (lambda (lst)
-                                                        (cons parent lst))
-                                                      '())
-                          hash)
-			(make-hash-table))))
+    (if (eq? 1 (hash-table-size (node-symbols-map parent)))
+        (hash-table-update!/default (iadfa-register iadfa) 
+                                    (node-label child)
+                                    (lambda (hash)
+                                      (hash-table-update!/default hash
+                                                                  input
+                                                                  (lambda (lst)
+                                                                    (cons parent lst))
+                                                                  '())
+                                      hash)
+                                    (make-hash-table)))))
 
 
 (define delete-parent-to-registered
@@ -158,6 +170,7 @@
       (if (has-children? last-node)
 	  (replace-or-register iadfa last-node))
       (add-suffix last-node current-suffix iadfa)
+      (delete-parent-to-registered-childs iadfa last-node)
       iadfa)))
 
 (define replace-or-register
@@ -251,7 +264,6 @@
   (lambda (node current-suffix iadfa)
     (let ((fsa (iadfa-fsa iadfa))
 	  (last-node node))
-      (delete-parent-to-registered-childs iadfa node)
       (fold (lambda (input fsa)
               (let ((new-state (generate-state iadfa)))
                 (fsa-add-edge! fsa (node-label last-node) input new-state)
