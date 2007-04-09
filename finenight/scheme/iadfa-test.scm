@@ -54,9 +54,14 @@
 
 
 (define my-iadfa (gen-iadfa '("appendice" "appendicee"
-                              "bappendice" "bappendicee")))
+                              "bappendice" "bappendicee"
+                              "batisa" "batise" "batissa"
+                              "criba" "cribaa"
+                              "crima" "crime")))
 (define my-fsa (iadfa-fsa my-iadfa))
-;(check (sort (iadfa-state-ancestrors my-iadfa 9) <) => '(8 22 39))
+(graphviz-export my-fsa)
+(check (sort (iadfa-state-ancestrors my-iadfa 10) <) => '(9 27 33))
+(check (sort (iadfa-state-ancestrors-for-input my-iadfa 10 #\a) <) => '(27 33))
 ;(check (sort (iadfa-state-ancestrors my-iadfa 8) <) => '(7))
 ;(check (sort (iadfa-state-ancestrors my-iadfa 24) <) => '())
 

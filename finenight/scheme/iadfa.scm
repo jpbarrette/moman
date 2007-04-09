@@ -61,7 +61,17 @@
                            '())
           '()))))
     
-
+(define iadfa-state-ancestrors-for-input
+  (lambda (iadfa label input)
+    (let ((register (iadfa-register iadfa)))
+      (if (hash-table-exists? register label)
+          (map (lambda (node)
+                 (node-label node))
+               (hash-table-ref/default (hash-table-ref register label)
+                                       input
+                                       '()))
+          '()))))
+    
 (define iadfa-node-ancestrors
   (lambda (iadfa label input)
     (let ((register (iadfa-register iadfa)))
