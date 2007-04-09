@@ -14,7 +14,8 @@
 (define-record iadfa 
   register
   index ;; this is used for automatic node name generation
-  fsa)
+  fsa
+  final)
 
 ;; This will return the node's last child added.
 (define last-child
@@ -117,6 +118,8 @@
 
 (define mark-as-registered
   (lambda (iadfa parent child)
+    (if (eq? (iadfa-final iadfa) #f)
+        (iadfa-final-set! iadfa child))
     (append-parent-to-registered iadfa
                                  parent
                                  (last-input parent)
@@ -134,7 +137,8 @@
   (lambda ()
     (make-iadfa (make-hash-table) 
 		1
-		(make-empty-fsa 0))))
+		(make-empty-fsa 0)
+                #f)))
   
 (define gen-iadfa 
   (lambda (words)
@@ -188,20 +192,13 @@
 
 (define equivalent-registered-states
   (lambda (iadfa node)
-    (if (final? node)
-	(find-equivalent-final-states iadfa node)
-	(find-equivalent-states iadfa node))))
+    (if (has-children? node)
+	(find-equivalent-states iadfa node)
+        (find-equivalent-final-states iadfa node))))
 
 (define find-equivalent-final-states
   (lambda (iadfa node)
-    (let ((fsa (iadfa-fsa iadfa)))
-      (any (lambda (other)
-	      (if (equal? (node-label other) (node-label node)) 
-		  #f
-		  (if (node-is-equivalent node other)
-		      other
-		      #f)))
-	    (fsa-finals fsa)))))
+    (iadfa-final iadfa)))
 
 
 (define find-equivalent-states
@@ -209,7 +206,7 @@
     (let ((fsa (iadfa-fsa iadfa)))
       (any (lambda (other)
 	     (if (and (not (eq? other node))
-		      (node-is-equivalent node other))
+		      (eq? (node-final node) (node-final other)))
 		 other
 		 #f))
            (iadfa-node-ancestrors iadfa

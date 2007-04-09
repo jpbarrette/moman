@@ -41,7 +41,7 @@
                               "brateau" "cracher")))
 (define my-fsa (iadfa-fsa my-iadfa))
 (check (sort (iadfa-state-ancestrors my-iadfa 9) <) => '(8 22 39))
-(check (sort (iadfa-state-ancestrors my-iadfa 8) <) => '(7))
+(check (sort (iadfa-state-ancestrors my-iadfa 8) <) => '(7 24))
 (check (sort (iadfa-state-ancestrors my-iadfa 24) <) => '())
 (check (accept? my-fsa (string->list "appendice")) => #t)
 (check (accept? my-fsa (string->list "bateau")) => #t)
