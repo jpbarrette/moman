@@ -27,11 +27,12 @@
 ;; This returns the last node's symbol (alphabetical order)
 (define last-input
   (lambda (node)
-    (car (sort (node-symbols node) char>?))))
+    (car (hash-table-keys (node-symbols-map node)))))
 
 (define has-children?
   (lambda (node)
-    (not (null? (node-edges node)))))
+    (> (hash-table-size (node-symbols-map node))
+       0)))
 
 (define common-prefix
   (lambda (word node prefix)
