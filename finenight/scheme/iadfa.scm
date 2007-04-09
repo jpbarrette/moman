@@ -270,7 +270,7 @@
   (lambda (iadfa child)
     (let ((fsa (iadfa-fsa iadfa)))
       (if (has-children? child)
-          (let ((input (last-input)))
+          (let ((input (last-input child)))
             (delete-parent-to-registered iadfa 
                                          child
                                          input
