@@ -1,5 +1,6 @@
 (compile -s -O3 -inline -profile utils-scm.scm)
 (compile -s -O3 -inline -profile fsa.scm)
+(compile -s -O3 -inline -profile fsa-builder.scm)
 (compile -s -O3 -inline -profile iadfa.scm)
 (compile -s -O3 -inline -profile iadfa-run.scm)
 (install-extension

@@ -4,5 +4,4 @@
 
 (define my-fsa (gen-iadfa-from-file "com.zone.sorted.small"))
 
-(graphviz-export my-fsa)
 

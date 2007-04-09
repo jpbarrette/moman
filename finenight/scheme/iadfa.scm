@@ -1,15 +1,15 @@
 (define-extension iadfa)
-;(require-extension defstruct)
+                                        ;(require-extension defstruct)
 (require-extension utils-scm)
 (require-extension fsa)
 (require-extension srfi-1)
 
-;(load "fsa.scm")
-;(load "sort.scm")
-;(require (lib "32.ss" "srfi"))
+                                        ;(load "fsa.scm")
+                                        ;(load "sort.scm")
+                                        ;(require (lib "32.ss" "srfi"))
 
-;(declare (unit iadfa))
-;(declare (uses fsa))
+                                        ;(declare (unit iadfa))
+                                        ;(declare (uses fsa))
 
 (define-record iadfa 
   register
@@ -64,7 +64,7 @@
                                      ancestrors))
                            '())
           '()))))
-    
+
 (define iadfa-state-ancestrors-for-input
   (lambda (iadfa label input)
     (let ((register (iadfa-register iadfa)))
@@ -75,7 +75,7 @@
                                        input
                                        '()))
           '()))))
-    
+
 (define iadfa-node-ancestrors
   (lambda (iadfa label input)
     (let ((register (iadfa-register iadfa)))
@@ -114,12 +114,12 @@
                                                               (delete! parent lst eq?))
                                                             '())
                                 hash))))))
-                              
-    
+
+
 (define delete-parent-to-registered-childs
   (lambda (iadfa node)
     (let ((symbols-map (node-symbols-map node)))
-;      (if (eq? 1 (hash-table-size symbols-map))
+                                        ;      (if (eq? 1 (hash-table-size symbols-map))
       (hash-table-walk
        symbols-map
        (lambda (symbol destinations)
@@ -145,22 +145,22 @@
     (let ((name (iadfa-index iadfa)))
       (iadfa-index-set! iadfa (+ 1 (iadfa-index iadfa)))
       name)))
-  
+
 
 (define build-iadfa
   (lambda ()
     (make-iadfa (make-hash-table) 
 		1
-		(make-empty-fsa 0)
+		(make-fsa (make-empty-node 0))
                 #f)))
-  
+
 (define gen-iadfa 
   (lambda (words)
     (let ((iadfa (fold (lambda (word iadfa) 
                          (handle-word iadfa (string->list word)))
                        (build-iadfa)
                        words)))
-      (replace-or-register iadfa (fsa-initial-node (iadfa-fsa iadfa))))))
+      (replace-or-register iadfa (fsa-start-node (iadfa-fsa iadfa))))))
 
 (define gen-iadfa-from-file 
   (lambda (file)
@@ -175,13 +175,13 @@
 	 (handle-word iadfa 
 		      (string->list line))
          (set! last-word line)))
-      (iadfa-fsa (replace-or-register iadfa (fsa-initial-node (iadfa-fsa iadfa)))))))
+      (iadfa-fsa (replace-or-register iadfa (fsa-start-node (iadfa-fsa iadfa)))))))
 
 
 (define handle-word
   (lambda (iadfa word)
     (let* ((fsa (iadfa-fsa iadfa))
-	   (common (common-prefix word (fsa-initial-node fsa) '()))
+	   (common (common-prefix word (fsa-start-node fsa) '()))
 	   (common-prefix (cdr common))
 	   (last-node (car common))
 	   (current-suffix (list-tail word (length common-prefix))))
@@ -226,7 +226,7 @@
            (iadfa-node-ancestrors iadfa
                                   (node-label (last-child node))
                                   (last-input node))))))
-             
+
 
 (define handle-equivalent-states
   (lambda (iadfa node child)
@@ -255,7 +255,7 @@
 	   (input (last-input node))
            (current-child (last-child node)))
       (node-remove-edge! node input current-child)
-      (fsa-add-edge! fsa (node-label node) input (node-label new-child))
+      (node-add-edge! node input new-child)
       (append-parent-to-registered iadfa node input new-child)
       node)))
 
@@ -268,21 +268,21 @@
 				       child
                                        (last-input child)
 				       (last-child child)))
-      (fsa-remove-node! fsa child))
-    iadfa))
+                                        ;(fsa-remove-node! fsa child))
+      iadfa)))
 
 (define add-suffix
   (lambda (node current-suffix iadfa)
     (let ((fsa (iadfa-fsa iadfa))
-	  (last-node node))
+          (last-node node))
       (fold (lambda (input fsa)
-              (let ((new-state (generate-state iadfa)))
-                (fsa-add-edge! fsa (node-label last-node) input new-state)
-                (set! last-node (get-node fsa new-state))
+              (let ((new-node (make-empty-node (generate-state iadfa))))
+                (node-add-edge! last-node input new-node)
+                (set! last-node new-node)
                 fsa))
             (iadfa-fsa iadfa)
             current-suffix)
-      (fsa-add-final-node! fsa last-node)
+      (node-final-set! last-node #t) 
       iadfa)))
 
 
