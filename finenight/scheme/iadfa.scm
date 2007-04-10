@@ -169,17 +169,13 @@
 
 (define gen-iadfa-from-file 
   (lambda (file)
-    (let ((iadfa (build-iadfa))
-          (last-word #f))
+    (let ((iadfa (build-iadfa)))
       (for-each-line-in-file 
        file
        (lambda (line)
-         (if (and (not (eq? #f last-word)) (not (string<? last-word line)))
-             (display (format "~A not smaller than ~A ~%" last-word line)))
 	 (display (format "~A ~%" line))
 	 (handle-word iadfa 
-		      (string->list line))
-         (set! last-word line)))
+		      (string->list line))))
       (iadfa-fsa (replace-or-register iadfa (fsa-start-node (iadfa-fsa iadfa)))))))
 
 
