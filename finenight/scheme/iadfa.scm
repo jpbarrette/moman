@@ -1,15 +1,8 @@
-(define-extension iadfa)
-                                        ;(require-extension defstruct)
-(require-extension utils-scm)
-(require-extension fsa)
+;(define-extension iadfa)
+
 (require-extension srfi-1)
-
-                                        ;(load "fsa.scm")
-                                        ;(load "sort.scm")
-                                        ;(require (lib "32.ss" "srfi"))
-
-                                        ;(declare (unit iadfa))
-                                        ;(declare (uses fsa))
+(include "utils-scm.scm")
+(include "fsa.scm")
 
 (define-record iadfa 
   register
@@ -27,6 +20,13 @@
   (lambda (node input)
     (let ((lst-node (node-transition node input)))
       (car lst-node))))
+
+(define (hash-table-last-key ht)
+  (##sys#check-structure ht 'hash-table 'hash-table-keys)
+  (let* ([vec (##sys#slot ht 1)]
+         [bucket (##sys#slot vec 0)])
+    (##sys#slot bucket 0)))
+
 
 
 ;; This returns the last node's symbol (alphabetical order)
@@ -128,12 +128,14 @@
       (hash-table-walk
        symbols-map
        (lambda (symbol destinations)
-         (map (lambda (dst)
+         (fold (lambda (dst iadfa)
                 (delete-parent-to-registered iadfa
                                              node
                                              symbol
-                                             dst))
-              destinations))))))
+                                             dst)
+                iadfa)
+               iadfa
+               destinations))))))
 
 (define mark-as-registered
   (lambda (iadfa parent child)

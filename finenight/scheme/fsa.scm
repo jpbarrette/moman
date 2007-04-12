@@ -1,7 +1,7 @@
-(define-extension fsa)
+;(define-extension fsa)
 (require-extension format)
 
-(require-extension utils-scm)
+(include "utils-scm.scm")
 (require-extension srfi-1)
 
 
