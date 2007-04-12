@@ -1,7 +1,7 @@
-;(define-extension fsa)
-(require-extension format)
+(define-extension fsa)
 
-(include "utils-scm.scm")
+(require-extension format)
+;(require-extension utils-scm)
 (require-extension srfi-1)
 
 
@@ -48,6 +48,10 @@
 				   (node-transition node (car symbols)))
 			      (S (cdr symbols)))))))
       (S (node-symbols node)))))
+
+(define node-walk
+  (lambda (node proc)
+    (hash-table-walk (node-symbols-map node) proc)))
 
 (define node-edges2
   (lambda (node)

@@ -2,7 +2,7 @@
 ;(require-extension iadfa)
 (include "iadfa.scm")
 
-(define my-fsa (gen-iadfa-from-file "com.zone.sorted.small"))
+(define my-fsa (gen-iadfa-from-file "com.zone.sorted.small.reverted"))
 
 (display "done")
 (newline)

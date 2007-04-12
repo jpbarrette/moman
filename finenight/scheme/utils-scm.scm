@@ -1,4 +1,4 @@
-;(define-extension utils-scm)
+(define-extension utils-scm)
 
 (define my-hash-table-get!
   (lambda (hash-table key default-func)
