@@ -1,4 +1,4 @@
-(define-extension fsa)
+;(define-extension fsa)
 
 (require-extension format)
 ;(require-extension utils-scm)

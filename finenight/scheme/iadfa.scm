@@ -1,4 +1,4 @@
-(define-extension iadfa)
+;(define-extension iadfa)
 
 (require-extension srfi-1)
 ;(require-extension utils-scm)
