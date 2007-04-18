@@ -1,0 +1,17 @@
+General:
+ - For better unit tests for iadfa generation, we should check:
+   - If we got non-final leafs nodes.
+   - If we got non-reachable nodes (usually it means that we got
+     deleted nodes still in the FSA).
+   - If the reversed FSA is not deterministic. If it's the case
+     it means that the suffixes weren't collapsed correctly.
+
+Python:
+ - Implement a faster fsa minimization algorithm.
+ - Complete the IncrementalADFA class. 
+ - Implement a 2-degres levenshtein-automata algorithm.
+
+Lisp:
+ - Check if the "I can add the same edge twice" behavior
+   is correct. 
+

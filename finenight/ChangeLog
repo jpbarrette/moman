@@ -1,0 +1,13 @@
+Jean-Philippe Barrette-LaPierre (19 Mars 2006) version 0.2.0
+- (lisp) a node is now epsilon aware.
+- (lisp) added transition function for nodes.
+- (lisp) fixed graphviz export.
+
+Jean-Philippe Barrette-LaPierre (5 September 2005) version 0.2.0
+- Added some Fast string correction to lisp code.
+
+Jean-Philippe Barrette-LaPierre (17 April 2005) version 0.1.0
+- Added utils.lisp file.
+
+Jean-Philippe Barrette-LaPierre (13 April 2005) version 0.1.0
+- Added transposition operations for Fast String Correction (fsc.py)

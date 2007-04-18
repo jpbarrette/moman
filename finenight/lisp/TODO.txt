@@ -1,0 +1,4 @@
+iadfa.lisp:
+- We could set finals by appending at the end of the list the final states instead of appending
+  in the front. Then the first state would be the final state without any edges out. This state
+  is probably the one equivalent.
