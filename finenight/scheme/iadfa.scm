@@ -15,23 +15,64 @@
 
 (define has-children?
   (lambda (node)
-    (> (hash-table-size (node-symbols-map node))
+    (> (node-arity node)
        0)))
 
+
+(define handle-subsumed-prefix
+  (lambda (iadfa stem-start-node stem-end-node stem-prefix current-node)
+    (if (eq? stem-node node)
+        ;; we didn't have went further the stem
+        (node-final-set! node #t)
+        (delete-branch stem-start-node))))
+
+(define delete-branch
+  (lambda (iadfa stem-start-node stem-start-input stem-end-node)
+    (remove-ancestor-to-childs iadfa stem-end-node)
+    (node-remove-dsts-for-input! stem-start-node stem-start-input)))
+
 (define common-prefix
-  (lambda (word node)
-    (if (eq? 0 (length word))
-	(cons node word)
-	(let ((next-node (node-transition node (car word))))
-	  (if (null? next-node)
-	      (cons node word)
-	      (common-prefix (cdr word)
-			     (car next-node)))))))
+  (lambda (iadfa word node)
+    (let ([stem '()]
+          [stem-start-node node]
+          [stem-start-input #f]
+          [stem-end-node  #f]
+          [profile '()]
+          [found-stem #f])
+      (letrec ((c-prefix (lambda (word node prefix)
+                           (if (null? word)
+                               (begin
+                                 (delete-branch iadfa stem-start-node stem-start-input stem-end-node)
+                                 (list stem-start-node stem profile))
+                               (let ((next-node (node-transition node (car word))))
+                                 (if (null? next-node)
+                                     (list node word profile)
+                                     (begin (set! next-node (car next-node))
+                                            (if (not found-stem)
+                                                (begin 
+                                                  (if (< 1 (node-arity node))
+                                                      (begin 
+                                                        (set! stem-start-node next-node)
+                                                        (set! stem-start-input (car word))
+                                                        (set! profile '())))
+                                                  (append! profile (list (node-final node)))
+                                                  (append! stem (list (car word)))
+                                                  (if (> (node-label node) (node-label next-node))
+                                                      (set! stem-end-node next-node)
+                                                      (set! found-stem #t))))
+                                            (c-prefix (cdr word)
+                                                      next-node
+                                                      (append (list prefix)
+                                                              (car word))))))))))
+        (c-prefix word node '())))))
+             
+
+
 
 
 
 (define common-suffix
-  ;; this function takes a reverted to be consumed
+  ;; this function takes a suffix to be consumed
   ;; and a node to start from and the current stem
   (lambda (iadfa current-suffix node)
     (letrec ((c-suffix (lambda (iadfa current-suffix node)
@@ -48,7 +89,7 @@
 
 (define remove-ancestor-to-childs
   (lambda (iadfa node)
-    (if (eq? 1 (hash-table-size (node-symbols-map node)))
+    (if (eq? 1 (node-arity node))
         (node-walk node (lambda (input destination-nodes)
                           (for-each (lambda (dst-node)
                                       (node-set-ancestror! iadfa dst-node input #f))
@@ -104,16 +145,14 @@
 		      (string->list line))))
       (iadfa-fsa iadfa))))
 
-
 (define handle-word
   (lambda (iadfa word)
     (let* ((fsa (iadfa-fsa iadfa))
-	   (common (common-prefix word (fsa-start-node fsa)))
+	   (common (common-prefix iadfa word (fsa-start-node fsa)))
 	   (prefix-node (car common))
 	   (current-suffix (cdr common)))
       (remove-ancestor-to-childs iadfa prefix-node)
-      (if (eq? 0 (length current-suffix))
-          (node-final-set! prefix-node #t)
+      (if (< 0 (length current-suffix))
           (let* ((suffix (common-suffix iadfa current-suffix (iadfa-final iadfa)))
                  (suffix-node (car suffix))
                  (current-stem (cdr suffix)))

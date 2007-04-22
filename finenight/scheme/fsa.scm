@@ -35,6 +35,10 @@
   (lambda (node)
     (apply append (hash-table-values (node-symbols-map node)))))
 
+(define node-arity
+  (lambda (node)
+    (hash-table-size (node-symbols-map node))))
+
 (define node-edges
   (lambda (node)
     (letrec ((label (node-label node))
@@ -100,6 +104,12 @@
 				 '()))
 	   (node-symbols node)))
     node))
+
+(define node-remove-dsts-for-input!
+  (lambda (node input)
+    (let ((symbols-map (node-symbols-map node)))
+      (hash-table-delete! symbols-map input)
+      node)))
 
 
 ;; will return the list of destination nodes for the
