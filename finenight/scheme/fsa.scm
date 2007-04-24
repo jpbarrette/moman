@@ -148,7 +148,8 @@
 
 
 ;(define-record-printer (fsa x out)
-;  (fprintf out "(fsa ~S ~S ~S)"
+;  (fprintf out
+;           "(fsa ~S ~S ~S)"
 ;	   (fsa-initial-state x) (fsa-finals x) (hash-table->alist (fsa-nodes x))))
 
   

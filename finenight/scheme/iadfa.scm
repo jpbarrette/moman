@@ -35,36 +35,49 @@
   (lambda (iadfa word node)
     (let ([stem '()]
           [stem-start-node node]
-          [stem-start-input #f]
-          [stem-end-node  #f]
+          [stem-start-input (car word)]
+          [stem-end-node  (iadfa-final iadfa)]
           [profile '()]
           [found-stem #f])
-      (letrec ((c-prefix (lambda (word node prefix)
-                           (if (null? word)
-                               (begin
-                                 (delete-branch iadfa stem-start-node stem-start-input stem-end-node)
-                                 (list stem-start-node stem profile))
-                               (let ((next-node (node-transition node (car word))))
-                                 (if (null? next-node)
-                                     (list node word profile)
-                                     (begin (set! next-node (car next-node))
-                                            (if (not found-stem)
-                                                (begin 
-                                                  (if (< 1 (node-arity node))
-                                                      (begin 
-                                                        (set! stem-start-node next-node)
-                                                        (set! stem-start-input (car word))
-                                                        (set! profile '())))
-                                                  (append! profile (list (node-final node)))
-                                                  (append! stem (list (car word)))
-                                                  (if (> (node-label node) (node-label next-node))
-                                                      (set! stem-end-node next-node)
-                                                      (set! found-stem #t))))
-                                            (c-prefix (cdr word)
-                                                      next-node
-                                                      (append (list prefix)
-                                                              (car word))))))))))
+      (letrec ((c-prefix
+                (lambda (word node prefix)
+                  (display (format "stem:~S, stem-start-node:~S, stem-start-input:~S, stem-end-node:~S, profile:~S, found-stem:~S ~%, word:~S, node:~S, prefix:~S ~%"
+                                   stem
+                                   stem-start-node
+                                   stem-start-input
+                                   stem-end-node
+                                   profile
+                                   found-stem
+                                   word
+                                   node
+                                   prefix))
+                  (if (not found-stem)
+                      (if (< 1 (node-arity node))
+                          (begin 
+                            (set! stem-start-node node)
+                            (set! stem-start-input (car word))
+                            (set! profile '()))))
+                  (if (eq? (iadfa-final iadfa) node)
+                      (begin
+                        (delete-branch iadfa stem-start-node stem-start-input stem-end-node)
+                        (values stem-start-node stem profile))
+                      (let ((next-node (node-transition node (car word))))
+                        (if (null? next-node)
+                            (values node word profile)
+                            (begin (set! next-node (car next-node))
+                                   (if (not found-stem)
+                                       (begin 
+                                         (append! profile (list (node-final node)))
+                                         (append! stem (list (car word)))
+                                         (if (< (node-label node) (node-label next-node))
+                                             (set! stem-end-node next-node)
+                                             (set! found-stem #t))))
+                                   (c-prefix (cdr word)
+                                             next-node
+                                             (append prefix
+                                                     (list (car word)))))))))))
         (c-prefix word node '())))))
+     
              
 
 
@@ -147,17 +160,15 @@
 
 (define handle-word
   (lambda (iadfa word)
-    (let* ((fsa (iadfa-fsa iadfa))
-	   (common (common-prefix iadfa word (fsa-start-node fsa)))
-	   (prefix-node (car common))
-	   (current-suffix (cdr common)))
-      (remove-ancestor-to-childs iadfa prefix-node)
-      (if (< 0 (length current-suffix))
-          (let* ((suffix (common-suffix iadfa current-suffix (iadfa-final iadfa)))
-                 (suffix-node (car suffix))
-                 (current-stem (cdr suffix)))
-            (add-stem iadfa prefix-node suffix-node current-stem)))
-      iadfa)))
+    (let* ((fsa (iadfa-fsa iadfa)))
+      (receive (prefix-node current-suffix profile) (common-prefix iadfa word (fsa-start-node fsa))
+        (remove-ancestor-to-childs iadfa prefix-node)
+        (if (< 0 (length current-suffix))
+            (let* ((suffix (common-suffix iadfa current-suffix (iadfa-final iadfa)))
+                   (suffix-node (car suffix))
+                   (current-stem (cdr suffix)))
+              (add-stem iadfa prefix-node suffix-node current-stem)))
+        iadfa))))
 
 
 (define iadfa-add-edge!

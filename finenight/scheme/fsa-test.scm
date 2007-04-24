@@ -1,10 +1,10 @@
 (require-extension check)
-(require-extension fsa)
+(include "fsa-builder.scm")
 
 ;;(declare (uses fsa))
 ;;(use fsa)
 
-(define myfsa (make-empty-fsa 'a))
+(define myfsa (make-empty-fsa-builder 'a))
 
 (fsa-add-edge! myfsa 'a #\b 'b)
 (define a-node (get-node myfsa 'a))
@@ -19,7 +19,7 @@
 (fsa-remove-edge! myfsa 'b #\c 'c)
 (check (node-transition b-node #\c) => '())
 
-(define myfsa (make-empty-fsa 'a))
+(define myfsa (make-empty-fsa-builder 'a))
 
 (fsa-add-edge! myfsa 'a #\a 'a)
 (fsa-add-edge! myfsa 'a #\b 'ab)
@@ -41,13 +41,10 @@
 (check (node-label abbo-node) => 'abbo)
 (check (node-final (get-node myfsa 'abbo)) => #t)
 
-(check (accept? myfsa (string->list "abbo")) => #t)
-
-
-
+(check (fsa-builder-accept? myfsa (string->list "abbo")) => #t)
 
 ; testing deletion of nodes
-(define myfsa (make-empty-fsa 'a))
+(define myfsa (make-empty-fsa-builder 'a))
 
 (fsa-add-edge! myfsa 'a #\a 'a)
 (fsa-add-edge! myfsa 'a #\c 'c)

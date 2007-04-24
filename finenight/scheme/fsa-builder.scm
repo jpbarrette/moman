@@ -7,9 +7,22 @@
 ;; transitions is a list of 3-tuple. (source-node input-symbol destination-node)
 (define-record fsa-builder initial-state nodes finals)
 
-(define-record-printer (fsa x out)
+(define-record-printer (fsa-builder x out)
   (fprintf out "(fsa ~S ~S ~S)"
 	   (fsa-builder-initial-state x) (fsa-builder-finals x) (hash-table->alist (fsa-builder-nodes x))))
+
+(define make-fsa-builder-from-fsa
+  (lambda (fsa)
+    (let ([fsa-builder (make-empty-fsa-builder (fsa-start-node fsa))]
+          [nodes (list (fsa-start-node fsa))])
+      (letrec ([retreive-nodes (lambda (nodes)
+                                 (if (null? nodes)
+                                     fsa-builder
+                                     (retreive-nodes (lset-union nodes
+                                                                 (node-destinations (car nodes))))))])
+        (retreive-nodes nodes)))))
+
+      
 
 (define fsa-initial-node
   (lambda (fsa)
@@ -65,8 +78,8 @@
 
 (define fsa-add-edge!
   (lambda (fsa src-label input-symbol dst-label)
-    (let ((src-node (my-hash-table-get! (fsa-builder-nodes fsa) src-label (lambda () (make-empty-node src-label))))
-	  (dst-node (my-hash-table-get! (fsa-builder-nodes fsa) dst-label (lambda () (make-empty-node dst-label)))))
+    (let ((src-node (hash-table-update!/default (fsa-builder-nodes fsa) src-label (lambda (x) x) (make-empty-node src-label)))
+	  (dst-node (hash-table-update!/default (fsa-builder-nodes fsa) dst-label (lambda (x) x) (make-empty-node dst-label))))
       (node-add-edge! src-node input-symbol dst-node)
       fsa)))
 
@@ -80,7 +93,7 @@
 (define fsa-remove-edge!
   (lambda (fsa src-label input-symbol dst-label)
     (let ((src-node (hash-table-ref/default (fsa-builder-nodes fsa) src-label #f))
-	  (dst-node (hash-table-ref/default (fsa-nodes fsa) dst-label #f)))
+	  (dst-node (hash-table-ref/default (fsa-builder-nodes fsa) dst-label #f)))
       (if (and src-node dst-node)
           (node-remove-edge! src-node input-symbol dst-node))
       fsa)))
@@ -99,7 +112,7 @@
 (define make-empty-fsa-builder
   (lambda (initial-label)
     (let ((fsa (make-fsa-builder initial-label (make-hash-table) (list))))
-      (my-hash-table-get! (fsa-builder-nodes fsa) initial-label (lambda () (make-empty-node initial-label)))
+      (hash-table-update!/default (fsa-builder-nodes fsa) initial-label (lambda (x) x) (make-empty-node initial-label))
       fsa)))
 
 (define get-node 
@@ -169,7 +182,7 @@
 
 (define fsa-add-final! 
   (lambda (fsa node-label)
-    (fsa-add-final! fsa (get-node fsa node-label))))
+    (fsa-add-final-node! fsa (get-node fsa node-label))))
 
 (define fsa-add-final-node! 
   (lambda (fsa node)
@@ -218,3 +231,14 @@
      (close-output-port p)
      fsa)))
 
+
+(define fsa-builder-accept? 
+  (lambda (fsa-builder word)
+    (letrec ((T (lambda (node word)
+                  (if (null? word) 
+                      (node-final node)
+                      (let ((nodes (node-transition node (car word))))
+                        (if (null? nodes)
+                            #f
+                            (T (car nodes) (cdr word))))))))
+      (T (fsa-initial-node fsa-builder) word))))
