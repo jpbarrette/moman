@@ -41,16 +41,16 @@
           [found-stem #f])
       (letrec ((c-prefix
                 (lambda (word node prefix)
-                  (display (format "stem:~S, stem-start-node:~S, stem-start-input:~S, stem-end-node:~S, profile:~S, found-stem:~S ~%, word:~S, node:~S, prefix:~S ~%"
-                                   stem
-                                   stem-start-node
-                                   stem-start-input
-                                   stem-end-node
-                                   profile
-                                   found-stem
-                                   word
-                                   node
-                                   prefix))
+;;                   (display (format "stem:~S, stem-start-node:~S, stem-start-input:~S, stem-end-node:~S, profile:~S, found-stem:~S ~%, word:~S, node:~S, prefix:~S ~%"
+;;                                    stem
+;;                                    stem-start-node
+;;                                    stem-start-input
+;;                                    stem-end-node
+;;                                    profile
+;;                                    found-stem
+;;                                    word
+;;                                    node
+;;                                    prefix))
                   (if (not found-stem)
                       (if (< 1 (node-arity node))
                           (begin 
@@ -60,17 +60,17 @@
                   (if (eq? (iadfa-final iadfa) node)
                       (begin
                         (delete-branch iadfa stem-start-node stem-start-input stem-end-node)
-                        (values stem-start-node stem profile))
+                        (values stem-start-node (append stem word) (append profile '(#t) (make-list (length word) #f))))
                       (let ((next-node (node-transition node (car word))))
                         (if (null? next-node)
                             (values node word profile)
                             (begin (set! next-node (car next-node))
                                    (if (not found-stem)
                                        (begin 
-                                         (append! profile (list (node-final node)))
-                                         (append! stem (list (car word)))
-                                         (if (< (node-label node) (node-label next-node))
-                                             (set! stem-end-node next-node)
+                                         (set! profile (append profile (list (node-final node))))
+                                         (set! stem (append stem (list (car word))))
+                                         (set! stem-end-node next-node)
+                                         (if (> (node-label node) (node-label next-node))
                                              (set! found-stem #t))))
                                    (c-prefix (cdr word)
                                              next-node
@@ -87,8 +87,8 @@
 (define common-suffix
   ;; this function takes a suffix to be consumed
   ;; and a node to start from and the current stem
-  (lambda (iadfa current-suffix node)
-    (letrec ((c-suffix (lambda (iadfa current-suffix node)
+  (lambda (iadfa current-suffix node profile)
+    (letrec ((c-suffix (lambda (iadfa current-suffix node profile)
                          (if (eq? 0 (length current-suffix))
                              (cons node (reverse current-suffix))
                              (let ((next-node (ancestror-transition iadfa node (car current-suffix))))
@@ -97,7 +97,7 @@
                                    (c-suffix iadfa
                                              (cdr current-suffix)
                                              next-node)))))))
-      (c-suffix iadfa (reverse current-suffix) node))))
+      (c-suffix iadfa (reverse current-suffix) node (reverse profile)))))
                                            
 
 (define remove-ancestor-to-childs
@@ -109,7 +109,7 @@
                                     destination-nodes))))))
 
 (define ancestror-transition
-  (lambda (iadfa node input)
+  (lambda (iadfa node input final)
     (let ((ancestrors (vector-ref (iadfa-ancestrors iadfa) (node-label node))))
       (if (not ancestrors)
           #f

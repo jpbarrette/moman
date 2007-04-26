@@ -13,14 +13,25 @@
 
 (define make-fsa-builder-from-fsa
   (lambda (fsa)
-    (let ([fsa-builder (make-empty-fsa-builder (fsa-start-node fsa))]
+    (let ([fsa-builder (make-empty-fsa-builder (node-label (fsa-start-node fsa)))]
           [nodes (list (fsa-start-node fsa))])
-      (letrec ([retreive-nodes (lambda (nodes)
-                                 (if (null? nodes)
-                                     fsa-builder
-                                     (retreive-nodes (lset-union nodes
-                                                                 (node-destinations (car nodes))))))])
-        (retreive-nodes nodes)))))
+      (letrec ([retreive-nodes (lambda (n)
+                                 (if (null? n)
+                                     (begin
+                                       (display (format "~S ~%" nodes))
+                                       (build-fsa-builder-with-nodes))
+                                     (begin
+                                       (set! nodes (cons (car n) nodes))
+                                       (retreive-nodes (append (cdr n) (lset-difference eq?
+                                                                                        (node-destinations (car n))
+                                                                                        nodes))))))]
+               [build-fsa-builder-with-nodes
+                (lambda ()
+                  (for-each (lambda (node)
+                              (fsa-add-node! fsa-builder node))
+                            nodes))])
+        (retreive-nodes nodes))
+      fsa-builder)))
 
       
 
@@ -189,6 +200,12 @@
     (fsa-builder-finals-set! fsa (append (fsa-builder-finals fsa) (list node)))
     (node-final-set! node #t)
     fsa))
+
+(define fsa-add-node!
+  (lambda (fsa node)
+    (if (node-final node)
+        (fsa-add-final-node! fsa node))
+    (hash-table-update!/default (fsa-builder-nodes fsa) (node-label node) (lambda (n) node) node)))
 
 (define graphviz-export
   (lambda (fsa) 

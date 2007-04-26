@@ -1,10 +1,9 @@
 (require-extension check)
 (require-extension iadfa)
+(require-extension fsa-builder)
 
 (define my-iadfa (gen-iadfa '("append" "appendice"
-                              "bappend" "bappendice"
-                              "bateau"  "batisa" "batise"
-                              "brateau" "cracher")))
+                              "bappend")))
 (define my-fsa (iadfa-fsa my-iadfa))
 
 ;(check (sort (iadfa-state-ancestrors my-iadfa 9) <) => '(8 22 39))
@@ -13,9 +12,10 @@
 (check (accept? my-fsa (string->list "appendice")) => #t)
 (check (accept? my-fsa (string->list "bateau")) => #t)
 (check (accept? my-fsa (string->list "appendic")) => #f)
+(check (accept? my-fsa (string->list "append")) => #t)
 ;(check (node-final (get-node my-fsa 6)) => #t)
 
-;(graphviz-export my-fsa)
+(graphviz-export (make-fsa-builder-from-fsa my-fsa))
 
 
 
