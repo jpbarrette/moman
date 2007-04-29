@@ -17,9 +17,7 @@
           [nodes (list (fsa-start-node fsa))])
       (letrec ([retreive-nodes (lambda (n)
                                  (if (null? n)
-                                     (begin
-                                       (display (format "~S ~%" nodes))
-                                       (build-fsa-builder-with-nodes))
+                                     (build-fsa-builder-with-nodes)
                                      (begin
                                        (set! nodes (cons (car n) nodes))
                                        (retreive-nodes (append (cdr n) (lset-difference eq?
@@ -209,8 +207,12 @@
 
 (define graphviz-export
   (lambda (fsa) 
+    (graphviz-export-to-file fsa "test.dot")))
+
+(define graphviz-export-to-file
+  (lambda (fsa file) 
     "This function will write the dot description of the FSA in the stream."
-    (let ((p (open-output-file "test.dot")))
+    (let ((p (open-output-file file)))
      (display (format "digraph G {~%  rankdir = LR;~%  size = \"8, 10\";~%") 
 	      p)
      ;(display (format "  rotate = 90;~%")

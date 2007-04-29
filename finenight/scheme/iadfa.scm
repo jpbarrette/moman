@@ -5,6 +5,7 @@
 ;(require-extension fsa)
 (include "utils-scm.scm")
 (include "fsa.scm")
+(include "fsa-builder.scm")
 
 (define-record iadfa 
   ancestrors
@@ -18,13 +19,6 @@
     (> (node-arity node)
        0)))
 
-
-(define handle-subsumed-prefix
-  (lambda (iadfa stem-start-node stem-end-node stem-prefix current-node)
-    (if (eq? stem-node node)
-        ;; we didn't have went further the stem
-        (node-final-set! node #t)
-        (delete-branch stem-start-node))))
 
 (define delete-branch
   (lambda (iadfa stem-start-node stem-start-input stem-end-node)
@@ -41,16 +35,6 @@
           [found-stem #f])
       (letrec ((c-prefix
                 (lambda (word node prefix)
-;;                   (display (format "stem:~S, stem-start-node:~S, stem-start-input:~S, stem-end-node:~S, profile:~S, found-stem:~S ~%, word:~S, node:~S, prefix:~S ~%"
-;;                                    stem
-;;                                    stem-start-node
-;;                                    stem-start-input
-;;                                    stem-end-node
-;;                                    profile
-;;                                    found-stem
-;;                                    word
-;;                                    node
-;;                                    prefix))
                   (if (not found-stem)
                       (if (< 1 (node-arity node))
                           (begin 
@@ -63,7 +47,7 @@
                         (values stem-start-node (append stem word) (append profile '(#t) (make-list (length word) #f))))
                       (let ((next-node (node-transition node (car word))))
                         (if (null? next-node)
-                            (values node word profile)
+                            (values node word (make-list (length word) #f))
                             (begin (set! next-node (car next-node))
                                    (if (not found-stem)
                                        (begin 
@@ -89,14 +73,15 @@
   ;; and a node to start from and the current stem
   (lambda (iadfa current-suffix node profile)
     (letrec ((c-suffix (lambda (iadfa current-suffix node profile)
-                         (if (eq? 0 (length current-suffix))
+                         (if (eq? 1 (length current-suffix))
                              (cons node (reverse current-suffix))
-                             (let ((next-node (ancestror-transition iadfa node (car current-suffix))))
-                               (if (not next-node)
+                             (let ((next-node (ancestror-transition iadfa node (car current-suffix) (car profile))))
+                               (if (or (not next-node) (eq? next-node (fsa-start-node (iadfa-fsa iadfa))))
                                    (cons node (reverse current-suffix))
                                    (c-suffix iadfa
                                              (cdr current-suffix)
-                                             next-node)))))))
+                                             next-node
+                                             (cdr profile))))))))
       (c-suffix iadfa (reverse current-suffix) node (reverse profile)))))
                                            
 
@@ -105,7 +90,7 @@
     (if (eq? 1 (node-arity node))
         (node-walk node (lambda (input destination-nodes)
                           (for-each (lambda (dst-node)
-                                      (node-set-ancestror! iadfa dst-node input #f))
+                                      (node-remove-ancestror! iadfa dst-node input #f))
                                     destination-nodes))))))
 
 (define ancestror-transition
@@ -113,17 +98,71 @@
     (let ((ancestrors (vector-ref (iadfa-ancestrors iadfa) (node-label node))))
       (if (not ancestrors)
           #f
-          (hash-table-ref ancestrors input #f)))))
+          (let ([src-nodes (filter (lambda (node)
+                                     (eq? (node-final node) final))
+                                   (hash-table-ref/default ancestrors input '()))])
+            (if (null? src-nodes)
+                #f
+                (car src-nodes)))))))
 
-(define node-set-ancestror!
+(define node-add-ancestror!
   (lambda (iadfa dst-node input src-node)
     (let ((ancestrors (vector-ref (iadfa-ancestrors iadfa) (node-label dst-node))))
       (if (not ancestrors)
-          (set! ancestrors (make-hash-table))
-          (vector-set! (iadfa-ancestrors iadfa) (node-label dst-node) ancestrors))
-      (hash-table-set! ancestrors input src-node))))
+          (begin 
+            (set! ancestrors (make-hash-table))
+            (vector-set! (iadfa-ancestrors iadfa) (node-label dst-node) ancestrors)))
+      (hash-table-update!/default ancestrors
+                                  input
+                                  (lambda (nodes)
+                                    (cons src-node nodes))
+                                  '()))))
     
-          
+(define node-remove-ancestror!
+  (lambda (iadfa dst-node input src-node)
+    (let ((ancestrors (vector-ref (iadfa-ancestrors iadfa) (node-label dst-node))))
+      (if ancestrors
+          (hash-table-update!/default ancestrors
+                                      input
+                                      (lambda (nodes)
+                                        (remove (lambda (node)
+                                                  (eq? node src-node))
+                                                nodes))
+                                      '())))))
+
+(define node-ancestrors
+  (lambda (iadfa dst-node input)
+    (iadfa-state-ancestrors iadfa (node-label dst-node) input)))
+    
+(define build-fsa-from-ancestrors
+  (lambda (iadfa)
+    (let ([fsa (make-empty-fsa-builder 0)])
+      (vector-walk
+       (iadfa-ancestrors iadfa)
+       (lambda (label node-ancestrors)
+         (if node-ancestrors
+             (hash-table-walk
+              node-ancestrors
+              (lambda (input nodes)
+                (for-each
+                 (lambda (node)
+                   (fsa-add-edge! fsa label input (node-label node)))
+                 nodes))))))
+      fsa)))
+                                                        
+
+    
+(define iadfa-state-ancestrors
+  (lambda (iadfa dst-label input)
+    (let ((ancestrors (vector-ref (iadfa-ancestrors iadfa) dst-label)))
+      (if ancestrors
+          (map (lambda (node)
+                 (node-label node))
+               (hash-table-ref/default ancestrors
+                                       input
+                                       '()))
+          '()))))
+    
 (define generate-state
   (lambda (iadfa)
     (let ((name (iadfa-index iadfa)))
@@ -164,25 +203,27 @@
       (receive (prefix-node current-suffix profile) (common-prefix iadfa word (fsa-start-node fsa))
         (remove-ancestor-to-childs iadfa prefix-node)
         (if (< 0 (length current-suffix))
-            (let* ((suffix (common-suffix iadfa current-suffix (iadfa-final iadfa)))
+            (let* ((suffix (common-suffix iadfa current-suffix (iadfa-final iadfa) profile))
                    (suffix-node (car suffix))
                    (current-stem (cdr suffix)))
-              (add-stem iadfa prefix-node suffix-node current-stem)))
+              (add-stem iadfa prefix-node suffix-node current-stem profile)))
         iadfa))))
 
 
 (define iadfa-add-edge!
   (lambda (iadfa src-node input dst-node)
     (node-add-edge! src-node input dst-node)
-    (node-set-ancestror! iadfa dst-node input src-node)))
+    (node-add-ancestror! iadfa dst-node input src-node)))
 
 (define add-stem
-  (lambda (iadfa prefix-node suffix-node current-stem)
+  (lambda (iadfa prefix-node suffix-node current-stem profile)
     (let ((last-node prefix-node)
           (last-input (last current-stem))
           (processing-stem (take current-stem (- (length current-stem) 1))))
       (fold (lambda (input iadfa)
               (let ((new-node (make-empty-node (generate-state iadfa))))
+                (node-final-set! new-node (car profile))
+                (set! profile (cdr profile))
                 (iadfa-add-edge! iadfa last-node input new-node)
                 (set! last-node new-node)
                 iadfa))
