@@ -30,7 +30,7 @@
     (let ([stem '()]
           [stem-start-node node]
           [stem-start-input (car word)]
-          [stem-end-node  (iadfa-final iadfa)]
+          [stem-end-node #f]
           [profile '()]
           [found-stem #f])
       (letrec ((c-prefix
@@ -44,16 +44,16 @@
                   (if (eq? (iadfa-final iadfa) node)
                       (begin
                         (delete-branch iadfa stem-start-node stem-start-input stem-end-node)
-                        (values stem-start-node (append stem word) (append profile '(#t) (make-list (length word) #f))))
+                        (values stem-start-node (append stem word) (append profile (make-list (length word) #f))))
                       (let ((next-node (node-transition node (car word))))
                         (if (null? next-node)
                             (values node word (make-list (length word) #f))
                             (begin (set! next-node (car next-node))
                                    (if (not found-stem)
                                        (begin 
-                                         (set! profile (append profile (list (node-final node))))
+                                         (set! profile (append profile (list (node-final next-node))))
                                          (set! stem (append stem (list (car word))))
-                                         (set! stem-end-node next-node)
+                                         (set! stem-end-node node)
                                          (if (> (node-label node) (node-label next-node))
                                              (set! found-stem #t))))
                                    (c-prefix (cdr word)
@@ -90,7 +90,7 @@
     (if (eq? 1 (node-arity node))
         (node-walk node (lambda (input destination-nodes)
                           (for-each (lambda (dst-node)
-                                      (node-remove-ancestror! iadfa dst-node input #f))
+                                      (node-remove-ancestror! iadfa dst-node input node))
                                     destination-nodes))))))
 
 (define ancestror-transition
