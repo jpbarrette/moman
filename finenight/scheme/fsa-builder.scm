@@ -1,6 +1,6 @@
 (define-extension fsa-builder)
 
-(require-extension fsa)
+;(require-extension fsa)
 
 ;; initial-state speak of itself.
 ;; final-states is a list of nodes considered as final

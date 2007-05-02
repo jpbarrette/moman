@@ -3,7 +3,8 @@
 (require-extension fsa-builder)
 
 (define my-iadfa (gen-iadfa '("append" "appendice"
-                              "bappend" "bappendice")))
+                              "bappend" "bappendice"
+                              "cappend" "cappendice")))
 (define my-fsa (iadfa-fsa my-iadfa))
 
 (check (sort (iadfa-state-ancestrors my-iadfa 1 #\e) <) => '(8 22 39))

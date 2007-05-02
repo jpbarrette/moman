@@ -44,7 +44,7 @@
                   (if (eq? (iadfa-final iadfa) node)
                       (begin
                         (delete-branch iadfa stem-start-node stem-start-input stem-end-node)
-                        (values stem-start-node (append stem word) (append profile (make-list (length word) #f))))
+                        (values stem-start-node (append stem word) (append profile (make-list (- (length word) 1) #f))))
                       (let ((next-node (node-transition node (car word))))
                         (if (null? next-node)
                             (values node word (make-list (length word) #f))
@@ -188,11 +188,15 @@
 
 (define gen-iadfa-from-file 
   (lambda (file)
-    (let ((iadfa (build-iadfa)))
+    (let ([iadfa (build-iadfa)]
+          [index 0])
       (for-each-line-in-file 
        file
        (lambda (line)
 	 (display (format "~A ~%" line))
+         (graphviz-export-to-file (make-fsa-builder-from-fsa (iadfa-fsa iadfa)) (string-append "iadfa" (number->string index) ".dot"))
+         (graphviz-export-to-file (build-fsa-from-ancestrors iadfa) (string-append "iadfa-ances" (number->string index) ".dot"))
+         (set! index (+ index 1))
 	 (handle-word iadfa 
 		      (string->list line))))
       (iadfa-fsa iadfa))))
