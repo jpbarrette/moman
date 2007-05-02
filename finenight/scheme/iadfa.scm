@@ -22,7 +22,7 @@
 
 (define delete-branch
   (lambda (iadfa stem-start-node stem-start-input stem-end-node)
-    (remove-ancestor-to-childs iadfa stem-end-node)
+    (remove-ancestror-to-childs iadfa stem-end-node)
     (node-remove-dsts-for-input! stem-start-node stem-start-input)))
 
 (define common-prefix
@@ -85,13 +85,12 @@
       (c-suffix iadfa (reverse current-suffix) node (reverse profile)))))
                                            
 
-(define remove-ancestor-to-childs
+(define remove-ancestror-to-childs
   (lambda (iadfa node)
-    (if (eq? 1 (node-arity node))
-        (node-walk node (lambda (input destination-nodes)
-                          (for-each (lambda (dst-node)
-                                      (node-remove-ancestror! iadfa dst-node input node))
-                                    destination-nodes))))))
+    (node-walk node (lambda (input destination-nodes)
+                      (for-each (lambda (dst-node)
+                                  (node-remove-ancestror! iadfa dst-node input node))
+                                destination-nodes)))))
 
 (define ancestror-transition
   (lambda (iadfa node input final)
@@ -122,13 +121,14 @@
   (lambda (iadfa dst-node input src-node)
     (let ((ancestrors (vector-ref (iadfa-ancestrors iadfa) (node-label dst-node))))
       (if ancestrors
-          (hash-table-update!/default ancestrors
-                                      input
-                                      (lambda (nodes)
-                                        (remove (lambda (node)
-                                                  (eq? node src-node))
-                                                nodes))
-                                      '())))))
+          (begin
+            (hash-table-update!/default ancestrors
+                                        input
+                                        (lambda (nodes)
+                                          (remove (lambda (node)
+                                                    (eq? node src-node))
+                                                  nodes))
+                                        '()))))))
 
 (define node-ancestrors
   (lambda (iadfa dst-node input)
@@ -205,12 +205,11 @@
   (lambda (iadfa word)
     (let* ((fsa (iadfa-fsa iadfa)))
       (receive (prefix-node current-suffix profile) (common-prefix iadfa word (fsa-start-node fsa))
-        (remove-ancestor-to-childs iadfa prefix-node)
-        (if (< 0 (length current-suffix))
-            (let* ((suffix (common-suffix iadfa current-suffix (iadfa-final iadfa) profile))
-                   (suffix-node (car suffix))
-                   (current-stem (cdr suffix)))
-              (add-stem iadfa prefix-node suffix-node current-stem profile)))
+        (let* ((suffix (common-suffix iadfa current-suffix (iadfa-final iadfa) profile))
+               (suffix-node (car suffix))
+               (current-stem (cdr suffix)))
+          (add-stem iadfa prefix-node suffix-node current-stem profile)
+          (remove-ancestror-to-childs iadfa prefix-node))
         iadfa))))
 
 
