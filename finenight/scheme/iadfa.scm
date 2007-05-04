@@ -40,6 +40,7 @@
                           (begin 
                             (set! stem-start-node node)
                             (set! stem-start-input (car word))
+                            (set! stem '())
                             (set! profile '()))))
                   (if (eq? (iadfa-final iadfa) node)
                       (begin
@@ -179,13 +180,25 @@
       (node-final-set! (iadfa-final iadfa) #t)
       iadfa)))
 
-(define gen-iadfa 
+(define gen-iadfa
   (lambda (words)
     (fold (lambda (word iadfa) 
             (handle-word iadfa (string->list word)))
           (build-iadfa)
           words)))
 
+(define debug-gen-iadfa
+  (lambda (words)
+    (let ([index 0])
+      (fold (lambda (word iadfa)
+              (handle-word iadfa (string->list word))
+              (graphviz-export-to-file (make-fsa-builder-from-fsa (iadfa-fsa iadfa)) (string-append "iadfa" (number->string index) ".dot"))
+              (graphviz-export-to-file (build-fsa-from-ancestrors iadfa) (string-append "iadfa-ances" (number->string index) ".dot"))
+              (set! index (+ index 1))
+              iadfa)
+            (build-iadfa)
+            words))))
+  
 (define gen-iadfa-from-file 
   (lambda (file)
     (let ([iadfa (build-iadfa)]
@@ -194,11 +207,12 @@
        file
        (lambda (line)
 	 (display (format "~A ~%" line))
+	 (handle-word iadfa 
+		      (string->list line))
          (graphviz-export-to-file (make-fsa-builder-from-fsa (iadfa-fsa iadfa)) (string-append "iadfa" (number->string index) ".dot"))
          (graphviz-export-to-file (build-fsa-from-ancestrors iadfa) (string-append "iadfa-ances" (number->string index) ".dot"))
          (set! index (+ index 1))
-	 (handle-word iadfa 
-		      (string->list line))))
+         iadfa))
       (iadfa-fsa iadfa))))
 
 (define handle-word
@@ -223,9 +237,12 @@
     (let ((last-node prefix-node)
           (last-input (last current-stem))
           (processing-stem (take current-stem (- (length current-stem) 1))))
+      (display (format "current stem ~S~%" current-stem))
       (fold (lambda (input iadfa)
               (let ((new-node (make-empty-node (generate-state iadfa))))
                 (node-final-set! new-node (car profile))
+                (display (format "current stem ~S profile ~S~%" input profile))
+                (if (car profile) (display (format "final node added by stem: ~S~%" new-node)))
                 (set! profile (cdr profile))
                 (iadfa-add-edge! iadfa last-node input new-node)
                 (set! last-node new-node)
