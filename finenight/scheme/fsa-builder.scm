@@ -1,4 +1,4 @@
-(define-extension fsa-builder)
+;(define-extension fsa-builder)
 
 ;(require-extension fsa)
 
