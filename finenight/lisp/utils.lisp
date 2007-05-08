@@ -16,6 +16,10 @@
 	     hash)
     h))
 
+(defun hash-table-update! (func key hash)
+  (set! (gethash key hash) 
+	(func (gethash key hash))))
+
 ;; (defun hash-values (hash)
 ;;   (let ((values nil))
 ;;     (with-hash-table-iterator
