@@ -9,7 +9,7 @@
 (in-package :com.rrette.finenight)
 (provide :com.rrette.finenight.iadfa)
 
-;(require :com.rrette.finenight.fsa "fsa.lisp")
+(require :com.rrette.finenight.fsa "fsa.lisp")
 ;(require :com.rrette.finenight.utils "utils.lisp")
 
 (defstruct iadfa 
@@ -67,16 +67,16 @@
 (defun common-suffix  (iadfa current-suffix node profile)
   ;; this function takes a suffix to be consumed
   ;; and a node to start from and the current stem
-  (labels ((c-suffix (lambda (iadfa current-suffix node profile)
-		       (if (eq? 1 (length current-suffix))
-			   (cons node (reverse current-suffix))
-			 (let ((next-node (ancestror-transition iadfa node (car current-suffix) (car profile))))
-			   (if (or (not next-node) (eq? next-node (fsa-start-node (iadfa-fsa iadfa))))
-			       (cons node (reverse current-suffix))
-			     (c-suffix iadfa
-				       (cdr current-suffix)
-				       next-node
-				       (cdr profile))))))))
+  (labels ((c-suffix (iadfa current-suffix node profile)
+		     (if (eq? 1 (length current-suffix))
+			 (cons node (reverse current-suffix))
+		       (let ((next-node (ancestror-transition iadfa node (car current-suffix) (car profile))))
+			 (if (or (not next-node) (eq? next-node (fsa-start-node (iadfa-fsa iadfa))))
+			     (cons node (reverse current-suffix))
+			   (c-suffix iadfa
+				     (cdr current-suffix)
+				     next-node
+				     (cdr profile)))))))
 	  (c-suffix iadfa (reverse current-suffix) node (reverse profile))))
 
 

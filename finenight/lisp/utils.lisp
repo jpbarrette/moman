@@ -17,8 +17,8 @@
     h))
 
 (defun hash-table-update! (func key hash)
-  (set! (gethash key hash) 
-	(func (gethash key hash))))
+  (setf (gethash key hash) 
+	(funcall func (gethash key hash))))
 
 ;; (defun hash-values (hash)
 ;;   (let ((values nil))
