@@ -20,29 +20,44 @@
   (setf (gethash key hash) 
 	(funcall func (gethash key hash))))
 
-;; (defun hash-values (hash)
-;;   (let ((values nil))
-;;     (with-hash-table-iterator
-;;      (my-iterator hash)
-;;      (loop
-;;       (multiple-value-bind (entry-p key value)
-;; 			   (my-iterator)
-;; 			   (if entry-p
-;; 			       (setf values (cons value values))
-;; 			     (return)))))
-;;     values))
+(defun hash-table-update!/default (func key hash default)
+  (if (not (nth-value 1 (gethash key hash)))
+      (setf (gethash key hash) default))
+  (setf (gethash key hash) 
+	(funcall func (gethash key hash))))
 
-;; (defun hash-keys (hash)
-;;   (let ((keys nil))
-;;     (with-hash-table-iterator
-;;      (my-iterator hash)
-;;      (loop
-;;       (multiple-value-bind (entry-p key value)
-;; 			   (my-iterator)
-;; 			   (if entry-p
-;; 			       (setf keys (cons key keys))
-;; 			     (return)))))
-;;     keys))
+(defun hash-table-ref/default (key hash default)
+  (if (not (nth-value 1 (gethash key hash)))
+      (setf (gethash key hash) default)
+    (gethash key hash)))
+
+(defun hash-values (hash)
+  (let ((values nil))
+    (with-hash-table-iterator
+     (my-iterator hash)
+     (loop
+      (multiple-value-bind
+          (entry-p key value)
+          (my-iterator)
+        (declare (ignore key))
+        (if entry-p
+            (setf values (cons value values))
+          (return)))))
+    values))
+
+(defun hash-keys (hash)
+  (let ((keys nil))
+    (with-hash-table-iterator
+     (my-iterator hash)
+     (loop
+      (multiple-value-bind 
+          (entry-p key value)
+          (my-iterator)
+        (declare (ignore value))
+        (if entry-p
+            (setf keys (cons key keys))
+          (return)))))
+    keys))
 
 
 (defun equal-set (rhs lhs)

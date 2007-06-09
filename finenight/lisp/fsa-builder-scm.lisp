@@ -8,6 +8,7 @@
 (provide :com.rrette.finenight.fsa-builder)
 
 (require :com.rrette.finenight.utils "utils.lisp")
+(require :com.rrette.finenight.fsa "fsa-scm.lisp")
 
 ;; initial-state speak of itself.
 ;; final-states is a list of nodes considered as final
@@ -17,30 +18,6 @@
   (nodes (make-hash-table))
   (finals '()))
 
-(defun make-fsa-builder-from-fsa (fsa)
-    (let ((fsa-builder (make-empty-fsa-builder (node-label (fsa-start-node fsa))))
-          (nodes (list (fsa-start-node fsa))))
-      (labels ((retreive-nodes (n)
-			       (if (null n)
-				   (build-fsa-builder-with-nodes)
-				 (progn
-				   (setf nodes (cons (car n) nodes))
-				   (retreive-nodes (append (cdr n) (lset-difference eq
-										    (node-destinations (car n))
-										    nodes))))))
-	       (build-fsa-builder-with-nodes
-		(lambda ()
-		  (for-each (lambda (node)
-			      (fsa-add-node! fsa-builder node))
-			    nodes))))
-	      (retreive-nodes nodes))
-      fsa-builder))
-
-      
-
-(defun fsa-initial-node (fsa)
-    (get-node fsa (fsa-builder-initial-state fsa)))
-
 
 (defun fsa-edges (fsa)
   (labels ((E  (nodes) 
@@ -48,7 +25,7 @@
 		   '()
 		 (append (node-edges (car nodes))
 			 (E (cdr nodes))))))
-	  (E (hash-table-values (fsa-builder-nodes fsa)))))
+	  (E (hash-values (fsa-builder-nodes fsa)))))
 
 
 
@@ -168,14 +145,14 @@
   (fsa-add-final-node! fsa (get-node fsa node-label)))
 
 (defun fsa-add-final-node! (fsa node)
-  (fsa-builder-finals-set! fsa (append (fsa-builder-finals fsa) (list node)))
+  (setf (fsa-builder-finals fsa) (append (fsa-builder-finals fsa) (list node)))
   (setf (node-final node) t)
   fsa)
 
 (defun fsa-add-node! (fsa node)
   (if (node-final node)
       (fsa-add-final-node! fsa node))
-  (hash-table-update! (lambda (n) node) (node-label node)  (fsa-builder-nodes fsa)))
+  (hash-table-update! #'(lambda (n) (declare (ignore n)) node) (node-label node)  (fsa-builder-nodes fsa)))
 
 (defun graphviz-export (fsa) 
     (graphviz-export-to-file fsa "test.dot"))
@@ -187,31 +164,51 @@
     (if (not (null? (fsa-builder-finals fsa)))
 	(progn
 	  (format p "~%  node (shape = doublecircle);~% ")
-	  (map (lambda (x) 
-		 (format p " \"~A\"" (node-label x)))
-	       (fsa-builder-finals fsa))
-	  (foramt p ";")))
+	  (dolist (x (fsa-builder-finals fsa))
+            (format p " \"~A\"" (node-label x)))
+	  (format p ";")))
     (format p "~%~%  node (shape = circle);~% ")
-    (map (lambda (label)
-	   (format p " \"~A\"" label))
-	 (hash-table-keys (fsa-builder-nodes fsa)))
+    (dolist (label (hash-keys (fsa-builder-nodes fsa)))
+      (format p " \"~A\"" label))
     (format p ";~%~%")
-    (map (lambda (node)
-	   (map (lambda (edge)
-		  (format p 
-			  "  \"~A\" -> \"~A\" (label = \"~A\");~%"
-			  (car edge)
-			  (caddr edge)
-			  (if (null? (cadr edge))
-			      "epsilon"
-			    (cadr edge))))
-		(node-edges node)))
-	 (hash-table-values (fsa-builder-nodes fsa)))
+    (dolist (node (hash-values (fsa-builder-nodes fsa)))
+      (dolist (edge (node-edges node))
+        (format p 
+                "  \"~A\" -> \"~A\" (label = \"~A\");~%"
+                (car edge)
+                (caddr edge)
+                (if (null? (cadr edge))
+                    "epsilon"
+                  (cadr edge)))))
     (format p "}~%") 
     (close-output-port p)
     fsa))
 
 
+
+
+(defun fsa-initial-node (fsa)
+    (get-node fsa (fsa-builder-initial-state fsa)))
+
+
+(defun make-fsa-builder-from-fsa (fsa)
+    (let ((fsa-builder (make-empty-fsa-builder (node-label (fsa-start-node fsa))))
+          (nodes (list (fsa-start-node fsa))))
+      (labels ((retreive-nodes (n)
+			       (if (null n)
+				   (build-fsa-builder-with-nodes)
+				 (progn
+				   (setf nodes (cons (car n) nodes))
+				   (retreive-nodes (append (cdr n) (lset-difference #'eq
+										    (node-destinations (car n))
+										    nodes))))))
+	       (build-fsa-builder-with-nodes ()
+                                             (dolist (node nodes)
+                                               (fsa-add-node! fsa-builder node))))
+        (retreive-nodes nodes))
+      fsa-builder))
+
+      
 (defun fsa-builder-accept? (fsa-builder word)
   (labels ((T (node word)
 	      (if (null? word) 
@@ -221,3 +218,4 @@
 		      nil
 		    (T (car nodes) (cdr word)))))))
 	  (T (fsa-initial-node fsa-builder) word)))
+
