@@ -27,12 +27,12 @@
 				   (setf nodes (cons (car n) nodes))
 				   (retreive-nodes (append (cdr n) (lset-difference eq
 										    (node-destinations (car n))
-										    nodes)))))
-			       (build-fsa-builder-with-nodes
-				(lambda ()
-				  (for-each (lambda (node)
-					      (fsa-add-node! fsa-builder node))
-					    nodes)))))
+										    nodes))))))
+	       (build-fsa-builder-with-nodes
+		(lambda ()
+		  (for-each (lambda (node)
+			      (fsa-add-node! fsa-builder node))
+			    nodes))))
 	      (retreive-nodes nodes))
       fsa-builder))
 
@@ -81,8 +81,8 @@
     fsa))
 
 (defun fsa-remove-edge! (fsa src-label input-symbol dst-label)
-  (let ((src-node (hash-table-ref/default (fsa-builder-nodes fsa) src-label #f))
-	(dst-node (hash-table-ref/default (fsa-builder-nodes fsa) dst-label #f)))
+  (let ((src-node (hash-table-ref/default (fsa-builder-nodes fsa) src-label nil))
+	(dst-node (hash-table-ref/default (fsa-builder-nodes fsa) dst-label nil)))
     (if (and src-node dst-node)
 	(node-remove-edge! src-node input-symbol dst-node))
     fsa))
@@ -183,38 +183,31 @@
 (defun graphviz-export-to-file (fsa file) 
   "This function will write the dot description of the FSA in the stream."
   (let ((p (open-output-file file)))
-    (display (format "digraph G {~%  rankdir = LR;~%  size = \"8, 10\";~%") 
-	     p)
+    (format p "digraph G {~%  rankdir = LR;~%  size = \"8, 10\";~%") 
     (if (not (null? (fsa-builder-finals fsa)))
 	(progn
-	  (display (format "~%  node (shape = doublecircle);~% ")
-		   p)
+	  (format p "~%  node (shape = doublecircle);~% ")
 	  (map (lambda (x) 
-		 (display (format " \"~A\"" (node-label x))
-			  p))
+		 (format p " \"~A\"" (node-label x)))
 	       (fsa-builder-finals fsa))
-	  (display ";")))
-    (display (format "~%~%  node (shape = circle);~% ")
-	     p)
+	  (foramt p ";")))
+    (format p "~%~%  node (shape = circle);~% ")
     (map (lambda (label)
-	   (display (format " \"~A\"" label)
-		    p))
+	   (format p " \"~A\"" label))
 	 (hash-table-keys (fsa-builder-nodes fsa)))
-    (display (format ";~%~%")
-	     p)
+    (format p ";~%~%")
     (map (lambda (node)
 	   (map (lambda (edge)
-		  (display (format "  \"~A\" -> \"~A\" (label = \"~A\");~%"
-				   (car edge)
-				   (caddr edge)
-				   (if (null? (cadr edge))
-				       "epsilon"
-				     (cadr edge)))
-			   p))
+		  (format p 
+			  "  \"~A\" -> \"~A\" (label = \"~A\");~%"
+			  (car edge)
+			  (caddr edge)
+			  (if (null? (cadr edge))
+			      "epsilon"
+			    (cadr edge))))
 		(node-edges node)))
 	 (hash-table-values (fsa-builder-nodes fsa)))
-    (display (format "}~%") 
-	     p)
+    (format p "}~%") 
     (close-output-port p)
     fsa))
 
