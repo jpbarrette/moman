@@ -28,10 +28,29 @@
 
 
 (defun make-empty-node (label)
-    (make-node label))
+    (make-node :label label))
 
 (defun node-arity (node)
-    (hash-table-size (node-symbols-map node)))
+  (hash-table-size (node-symbols-map node)))
+
+(defun node-edges (node)
+  (let ((label (node-label node)))
+    (labels ((S (symbols)
+		(if (null symbols)
+		    '()
+		  (concatenate 'list (mapcar #'(lambda (dest-node)
+						 (list label 
+						       (car symbols) 
+						       (node-label dest-node)))
+					     (node-transition node (car symbols)))
+			       (S (cdr symbols))))))
+	    (S (node-symbols node)))))
+
+(defun node-symbols (node)
+    (hash-keys (node-symbols-map node)))
+
+(defun node-destinations (node)
+  (apply #'concatenate 'list (hash-values (node-symbols-map node))))
 
 (defun node-walk (node proc)
     (maphash proc (node-symbols-map node)))

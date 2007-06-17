@@ -21,7 +21,7 @@
 
 (defun fsa-edges (fsa)
   (labels ((E  (nodes) 
-	       (if (null? nodes)
+	       (if (null nodes)
 		   '()
 		 (append (node-edges (car nodes))
 			 (E (cdr nodes))))))
@@ -65,17 +65,17 @@
     fsa))
   
 (defun build-fsa (initial-label edges finals)
-  (let ((fsa (fold (lambda (edge fsa)
-		     (fsa-add-edge! fsa (car edge) (cadr edge) (caddr edge)))
-		   (make-empty-fsa-builder initial-label)
-		   edges)))
-    (fold (lambda (final fsa)
-	    (fsa-add-final! fsa final))
-	  fsa
-	  finals)))
+  (let ((fsa (reduce #'(lambda (edge fsa)
+			 (fsa-add-edge! fsa (car edge) (cadr edge) (caddr edge)))
+		     edges
+		     :initial-value (make-empty-fsa-builder initial-label))))
+    (reduce #'(lambda (final fsa)
+		(fsa-add-final! fsa final))
+	  finals
+	  :initial-value fsa)))
 
 (defun make-empty-fsa-builder (initial-label)
-  (let ((fsa (make-fsa-builder initial-label (make-hash-table) (list))))
+  (let ((fsa (make-fsa-builder :initial-state initial-label)))
     (hash-table-update!/default (fsa-builder-nodes fsa) initial-label (lambda (x) x) (make-empty-node initial-label))
     fsa))
 
@@ -159,9 +159,9 @@
 
 (defun graphviz-export-to-file (fsa file) 
   "This function will write the dot description of the FSA in the stream."
-  (let ((p (open-output-file file)))
+  (let ((p (open file :direction :output :if-exists :supersede)))
     (format p "digraph G {~%  rankdir = LR;~%  size = \"8, 10\";~%") 
-    (if (not (null? (fsa-builder-finals fsa)))
+    (if (not (null (fsa-builder-finals fsa)))
 	(progn
 	  (format p "~%  node (shape = doublecircle);~% ")
 	  (dolist (x (fsa-builder-finals fsa))
@@ -177,11 +177,11 @@
                 "  \"~A\" -> \"~A\" (label = \"~A\");~%"
                 (car edge)
                 (caddr edge)
-                (if (null? (cadr edge))
+                (if (null (cadr edge))
                     "epsilon"
                   (cadr edge)))))
     (format p "}~%") 
-    (close-output-port p)
+    (close p)
     fsa))
 
 
@@ -199,9 +199,9 @@
 				   (build-fsa-builder-with-nodes)
 				 (progn
 				   (setf nodes (cons (car n) nodes))
-				   (retreive-nodes (append (cdr n) (lset-difference #'eq
-										    (node-destinations (car n))
-										    nodes))))))
+				   (retreive-nodes (append (cdr n) (set-difference #'eq
+										   (node-destinations (car n))
+										   nodes))))))
 	       (build-fsa-builder-with-nodes ()
                                              (dolist (node nodes)
                                                (fsa-add-node! fsa-builder node))))
@@ -211,10 +211,10 @@
       
 (defun fsa-builder-accept? (fsa-builder word)
   (labels ((T (node word)
-	      (if (null? word) 
+	      (if (null word) 
 		  (node-final node)
 		(let ((nodes (node-transition node (car word))))
-		  (if (null? nodes)
+		  (if (null nodes)
 		      nil
 		    (T (car nodes) (cdr word)))))))
 	  (T (fsa-initial-node fsa-builder) word)))
