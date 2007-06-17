@@ -22,8 +22,8 @@
   (let ((ancestrors (aref (iadfa-ancestrors iadfa) (node-label node))))
     (if (not ancestrors)
 	nil
-      (let ((src-nodes (filter (lambda (node)
-				 (eq (node-final node) final))
+      (let ((src-nodes (filter #'(lambda (node)
+				   (eq (node-final node) final))
 			       (gethash input ancestrors '()))))
 	(if (null src-nodes)
 	    nil
@@ -96,7 +96,7 @@
 (defun build-iadfa ()
   (let ((iadfa (make-iadfa (make-array 100000 :initial-element nil)
 			   2
-			   (make-fsa (make-empty-node 0))
+			   (make-fsa :start-node (make-empty-node 0))
 			   (make-empty-node 1))))
     (setf (node-final (iadfa-final iadfa)) t)
     iadfa))
@@ -119,10 +119,10 @@
 		       (if (eq (iadfa-final iadfa) node)
 			   (progn
 			     (delete-branch iadfa stem-start-node stem-start-input stem-end-node)
-			     (values stem-start-node (append stem word) (append profile (make-list (- (length word) 1) nil))))
+			     (values stem-start-node (append stem word) (append profile (make-list (- (length word) 1) :initial-element nil))))
 			 (let ((next-node (node-transition node (car word))))
 			   (if (null next-node)
-			       (values node word (make-list (length word) nil))
+			       (values node word (make-list (length word) :initial-element nil))
 			     (progn (setf next-node (car next-node))
 				    (if (not found-stem)
 					(progn
