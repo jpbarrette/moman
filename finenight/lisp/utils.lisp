@@ -79,3 +79,15 @@
 
 (defun generate-name (index)
   (format nil "q~A" index))
+
+(defun for-each-line-in-file (file func)
+  (with-open-file (p file :direction :input)
+		  (do ((line (read-line p nil 'eof)
+			     (read-line p nil 'eof)))
+		      ((eql line 'eof))
+		      (format t "~A~%" line)
+		      (apply func line))))
+		      
+(defun vector-walk (v func)
+  (dotimes (x (array-dimension v 0) nil)
+    (apply func x (aref v x))))

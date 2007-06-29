@@ -6,48 +6,43 @@
 
 (import 'org.ancar.CLUnit::deftest)
 
-(define my-iadfa (debug-gen-iadfa '("addendice"
-                                    "append" "appendice"
-                                    "bappend" "bappendice"
-                                    "cappend" "cappendice")))
-(define my-fsa (iadfa-fsa my-iadfa))
+(defparameter *my-iadfa* (debug-gen-iadfa '("addendice"
+				    "append" "appendice"
+				    "bappend" "bappendice"
+				    "cappend" "cappendice")))
+
+(defparameter *my-fsa* (iadfa-fsa *my-iadfa*))
+
 
 (defun test-dest-1 ()
-  (eq? (sort (iadfa-state-ancestrors my-iadfa 1 #\e) <) 
-       '(8 22 39)))
+  (eq (sort (iadfa-state-ancestrors *my-iadfa* 1 #\e) #'<) 
+      '(8 22 39)))
 
 (defun test-dest-2 ()
-  (eq? (sort (iadfa-state-ancestrors my-iadfa 7 #\a) <) 
-       '(0)))
-
-;(check (sort (iadfa-state-ancestrors my-iadfa 8) <) => '(7 24))
-;(check (sort (iadfa-state-ancestrors my-iadfa 24) <) => '())
+  (eq (sort (iadfa-state-ancestrors *my-iadfa* 7 #\a) #'<) 
+      '(0)))
 
 (defun test-accept ()
-  (and (accept? my-fsa (string->list "appendice"))
-       (accept? my-fsa (string->list "bateau"))
-       (not (accept? my-fsa (string->list "appendic")))
-       (accept? my-fsa (string->list "append"))))
+  (and (accept? *my-fsa*  "appendice")
+       (accept? *my-fsa* "bateau")
+       (not (accept? *my-fsa* "appendic"))
+       (accept? *my-fsa* "append")))
 
-(graphviz-export (make-fsa-builder-from-fsa my-fsa))
-(graphviz-export-to-file (build-fsa-from-ancestrors my-iadfa) "ancestrors.dot")
+(org.ancar.CLUnit::deftest "Destinations 1" 
+  :category "Destinations" 
+  :test-fn #'test-dest-1)
 
+(org.ancar.CLUnit::deftest "Destinations 2" 
+  :category "Destinations" 
+	    :test-fn #'test-dest-2)
 
-;(define my-iadfa (gen-iadfa '("appendice" "appendicee"
-;                              "bappendice" "bappendicee"
-;                              "batisa" "batise" "batissa"
-;                              "criba" "cribaa"
-;                              "crima" "crime")))
-;(define my-fsa (iadfa-fsa my-iadfa))
-;(graphviz-export my-fsa)
-;(check (sort (iadfa-state-ancestrors my-iadfa 10) <) => '(9 27 33))
-;(check (sort (iadfa-state-ancestrors-for-input my-iadfa 10 #\a) <) => '(27 33))
-;(check (sort (iadfa-state-ancestrors my-iadfa 8) <) => '(7))
-;(check (sort (iadfa-state-ancestrors my-iadfa 24) <) => '())
+(org.ancar.CLUnit::deftest "Accepts" 
+  :category "Accepts" 
+  :test-fn #'test-accept)
+(graphviz-export (make-fsa-builder-from-fsa *my-fsa*))
+(graphviz-export-to-file (build-fsa-from-ancestrors *my-iadfa*) "ancestrors.dot")
 
 
-
-;(define my-iadfa (handle-word (build-iadfa) (string->list "appendice")))
 
 
 

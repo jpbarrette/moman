@@ -14,7 +14,7 @@
 ;; final-states is a list of nodes considered as final
 ;; transitions is a list of 3-tuple. (source-node input-symbol destination-node)
 (defstruct (fsa-builder (:copier nil))
-  initial-state 
+  (initial-state 0)
   (nodes (make-hash-table))
   (finals '()))
 
@@ -68,7 +68,7 @@
   (let ((fsa (reduce #'(lambda (edge fsa)
 			 (fsa-add-edge! fsa (car edge) (cadr edge) (caddr edge)))
 		     edges
-		     :initial-value (make-empty-fsa-builder initial-label))))
+		     :initial-value (make-fsa-builder :initial-state initial-label))))
     (reduce #'(lambda (final fsa)
 		(fsa-add-final! fsa final))
 	  finals

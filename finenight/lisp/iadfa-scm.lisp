@@ -10,7 +10,8 @@
 (provide :com.rrette.finenight.iadfa)
 
 (require :com.rrette.finenight.fsa "fsa-scm.lisp")
-;(require :com.rrette.finenight.utils "utils.lisp")
+(require :com.rrette.finenight.fsa-builder "fsa-builder-scm.lisp")
+(require :com.rrette.finenight.utils "utils.lisp")
 
 (defstruct iadfa 
   (ancestrors (make-array 10000 :initial-element nil))
@@ -22,9 +23,7 @@
   (let ((ancestrors (aref (iadfa-ancestrors iadfa) (node-label node))))
     (if (not ancestrors)
 	nil
-      (let ((src-nodes (filter #'(lambda (node)
-				   (eq (node-final node) final))
-			       (gethash input ancestrors '()))))
+      (let ((src-nodes (remove final (gethash input ancestrors '()))))
 	(if (null src-nodes)
 	    nil
 	  (car src-nodes))))))
@@ -35,8 +34,8 @@
 	(progn
 	  (setf ancestrors (make-hash-table))
 	  (setf (aref (iadfa-ancestrors iadfa) (node-label dst-node)) ancestrors)))
-    (hash-table-update!	(lambda (nodes)
-			  (cons src-node nodes))
+    (hash-table-update!	#'(lambda (nodes)
+			    (cons src-node nodes))
 			input
 			ancestrors)))
     
@@ -44,18 +43,17 @@
   (let ((ancestrors (aref (iadfa-ancestrors iadfa) (node-label dst-node))))
     (if ancestrors
 	(progn 
-	  (hash-table-update! (lambda (nodes)
-				(remove (lambda (node)
-					  (eq node src-node))
-					nodes))
+	  (hash-table-update! #'(lambda (nodes)
+				  (remove #'(lambda (node)
+					      (eq node src-node))
+					  nodes))
 			      ancestrors
 			      input)))))
 
 (defun remove-ancestror-to-childs (iadfa node)
-  (node-walk node (lambda (input destination-nodes)
-		    (for-each (lambda (dst-node)
-				(node-remove-ancestror! iadfa dst-node input node))
-			      destination-nodes))))
+  (node-walk node #'(lambda (input destination-nodes)
+		      (dolist (dst-node destination-nodes iadfa)
+			(node-remove-ancestror! iadfa dst-node input node)))))
 
 (defun delete-branch (iadfa stem-start-node stem-start-input stem-end-node)
   (remove-ancestror-to-childs iadfa stem-end-node)
@@ -63,25 +61,23 @@
 
 
 (defun build-fsa-from-ancestrors (iadfa)
-  (let ((fsa (make-empty-fsa-builder 0)))
+  (let ((fsa (make-fsa-builder)))
     (vector-walk
      (iadfa-ancestrors iadfa)
-     (lambda (label node-ancestrors)
-       (if node-ancestrors
-	   (maphash
-	    (lambda (input nodes)
-	      (for-each
-	       (lambda (node)
-		 (fsa-add-edge! fsa label input (node-label node)))
-	       nodes))
-	    node-ancestrors))))
+     #'(lambda (label node-ancestrors)
+	 (if node-ancestrors
+	     (maphash
+	      #'(lambda (input nodes)
+		  (dolist (node nodes nil)
+		    (fsa-add-edge! fsa label input (node-label node))))
+	      node-ancestrors))))
     fsa))
     
 (defun iadfa-state-ancestrors (iadfa dst-label input)
   (let ((ancestrors (aref (iadfa-ancestrors iadfa) dst-label)))
     (if ancestrors
-	(mapcar (lambda (node)
-		  (node-label node))
+	(mapcar #'(lambda (node)
+		    (node-label node))
 		(gethash input ancestrors))
       '())))
     
@@ -165,16 +161,16 @@
 (defun add-stem (iadfa prefix-node suffix-node current-stem profile)
   (let ((last-node prefix-node)
 	(last-input (last current-stem))
-	(processing-stem (take current-stem (- (length current-stem) 1))))
-    (fold (lambda (input iadfa)
-	    (let ((new-node (make-empty-node (generate-state iadfa))))
-	      (setf (node-final new-node) (car profile))
-	      (setf profile (cdr profile))
-	      (iadfa-add-edge! iadfa last-node input new-node)
-	      (setf last-node new-node)
-	      iadfa))
-	  iadfa
-	  processing-stem)
+	(processing-stem (butlast current-stem)))
+    (reduce #'(lambda (input iadfa)
+		(let ((new-node (make-empty-node (generate-state iadfa))))
+		  (setf (node-final new-node) (car profile))
+		  (setf profile (cdr profile))
+		  (iadfa-add-edge! iadfa last-node input new-node)
+		  (setf last-node new-node)
+		  iadfa))
+	    processing-stem
+	    :initial-value iadfa)
     (iadfa-add-edge! iadfa last-node last-input suffix-node)
     iadfa))
 
@@ -190,35 +186,34 @@
 	     iadfa)))
 
 (defun gen-iadfa (words)
-  (fold (lambda (word iadfa) 
-	  (handle-word iadfa (string->list word)))
-	(build-iadfa)
-	words))
+  (reduce #'(lambda (word iadfa) 
+	      (handle-word iadfa word))
+	words
+	:initial-value (build-iadfa)))
 
 (defun debug-gen-iadfa (words)
   (let ((index 0))
-    (fold (lambda (word iadfa)
-	    (handle-word iadfa (string->list word))
-	    (graphviz-export-to-file (make-fsa-builder-from-fsa (iadfa-fsa iadfa)) (string-append "iadfa" (number->string index) ".dot"))
-	    (graphviz-export-to-file (build-fsa-from-ancestrors iadfa) (string-append "iadfa-ances" (number->string index) ".dot"))
-	    (setf index (+ index 1))
-	    iadfa)
-	  (build-iadfa)
-	  words)))
+    (reduce #'(lambda (word iadfa)
+		(handle-word iadfa word)
+		(graphviz-export-to-file (make-fsa-builder-from-fsa (iadfa-fsa iadfa)) (concatenate 'string "iadfa" (format nil "~A" index) ".dot"))
+		(graphviz-export-to-file (build-fsa-from-ancestrors iadfa) (concatenate 'string "iadfa-ances" (format nil "~A" index) ".dot"))
+		(setf index (+ index 1))
+		iadfa)
+	    words
+	    :initial-value (build-iadfa))))
   
 (defun gen-iadfa-from-file (file)
   (let ((iadfa (build-iadfa))
 	(index 0))
     (for-each-line-in-file 
      file
-     (lambda (line)
-       (display (format "~A ~%" line))
-       (handle-word iadfa 
-		    (string->list line))
-       (graphviz-export-to-file (make-fsa-builder-from-fsa (iadfa-fsa iadfa)) (string-append "iadfa" (number->string index) ".dot"))
-       (graphviz-export-to-file (build-fsa-from-ancestrors iadfa) (string-append "iadfa-ances" (number->string index) ".dot"))
-       (setf index (+ index 1))
-       iadfa))
+     #'(lambda (line)
+	 (format t "~A ~%" line)
+	 (handle-word iadfa line)
+	 (graphviz-export-to-file (make-fsa-builder-from-fsa (iadfa-fsa iadfa)) (concatenate 'string "iadfa" (format nil "~A" index) ".dot"))
+	 (graphviz-export-to-file (build-fsa-from-ancestrors iadfa) (concatenate 'string "iadfa-ances" (format nil "~A" index) ".dot"))
+	 (setf index (+ index 1))
+	 iadfa))
     (iadfa-fsa iadfa)))
 
 
