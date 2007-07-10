@@ -1,8 +1,4 @@
-(require :com.rrette.finenight.iadfa "iadfa-scm.lisp")
-(require :com.rrette.finenight.fsa-builder "fsa-builder-scm.lisp")
 (require :org.ancar.CLUnit "CLUnit.lisp")
-
-(in-package :com.rrette.finenight)
 
 (import 'org.ancar.CLUnit::deftest)
 

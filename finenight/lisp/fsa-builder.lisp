@@ -1,15 +1,3 @@
-(defpackage :com.rrette.finenight
-  (:use "COMMON-LISP")
-  (:nicknames "finenight")
-  (:export "make-fsa-builder"))
-
-
-(in-package :com.rrette.finenight)
-(provide :com.rrette.finenight.fsa-builder)
-
-(require :com.rrette.finenight.utils "utils.lisp")
-(require :com.rrette.finenight.fsa "fsa-scm.lisp")
-
 ;; initial-state speak of itself.
 ;; final-states is a list of nodes considered as final
 ;; transitions is a list of 3-tuple. (source-node input-symbol destination-node)
@@ -76,7 +64,7 @@
 
 (defun make-empty-fsa-builder (initial-label)
   (let ((fsa (make-fsa-builder :initial-state initial-label)))
-    (hash-table-update!/default (fsa-builder-nodes fsa) initial-label (lambda (x) x) (make-empty-node initial-label))
+    (hash-table-update!/default  (lambda (x) x) initial-label (fsa-builder-nodes fsa) (make-empty-node initial-label))
     fsa))
 
 (defun get-node (fsa node-label) 
