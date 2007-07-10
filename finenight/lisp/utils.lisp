@@ -1,3 +1,5 @@
+(declaim (optimize (speed 0) (space 0) (debug 3)))
+
 (defun copy-hash-table (hash &key (test 'eql)) 
   (let ((h (make-hash-table :test test)))
     (maphash (lambda (key x)
@@ -79,4 +81,4 @@
 		      
 (defun vector-walk (v func)
   (dotimes (x (array-dimension v 0) nil)
-    (apply func x (aref v x))))
+    (funcall func x (aref v x))))

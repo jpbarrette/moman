@@ -1,11 +1,11 @@
-(require :org.ancar.CLUnit "CLUnit.lisp")
+;(require :org.ancar.CLUnit "CLUnit.lisp")
 
-(import 'org.ancar.CLUnit::deftest)
+;(import 'org.ancar.CLUnit::deftest)
 
 (defparameter *my-iadfa* (debug-gen-iadfa '("addendice"
-				    "append" "appendice"
-				    "bappend" "bappendice"
-				    "cappend" "cappendice")))
+					    "append" "appendice"
+					    "bappend" "bappendice"
+					    "cappend" "cappendice")))
 
 (defparameter *my-fsa* (iadfa-fsa *my-iadfa*))
 

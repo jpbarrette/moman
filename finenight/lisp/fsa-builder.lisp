@@ -34,8 +34,8 @@
 ;;          (node-destinations node))))
 
 (defun fsa-add-edge! (fsa src-label input-symbol dst-label)
-  (let ((src-node (hash-table-update!/default (fsa-builder-nodes fsa) src-label (lambda (x) x) (make-empty-node src-label)))
-	(dst-node (hash-table-update!/default (fsa-builder-nodes fsa) dst-label (lambda (x) x) (make-empty-node dst-label))))
+  (let ((src-node (hash-table-update!/default (lambda (x) x) src-label (fsa-builder-nodes fsa) (make-empty-node src-label)))
+	(dst-node (hash-table-update!/default (lambda (x) x) dst-label (fsa-builder-nodes fsa) (make-empty-node dst-label))))
     (node-add-edge! src-node input-symbol dst-node)
     fsa))
 
@@ -187,9 +187,9 @@
 				   (build-fsa-builder-with-nodes)
 				 (progn
 				   (setf nodes (cons (car n) nodes))
-				   (retreive-nodes (append (cdr n) (set-difference #'eq
-										   (node-destinations (car n))
-										   nodes))))))
+				   (retreive-nodes (append (cdr n) (set-difference (node-destinations (car n))
+										   nodes
+										   :test #'eq))))))
 	       (build-fsa-builder-with-nodes ()
                                              (dolist (node nodes)
                                                (fsa-add-node! fsa-builder node))))

@@ -1,3 +1,5 @@
+(declaim (optimize (speed 0) (space 0) (debug 3)))
+
 (defstruct iadfa 
   (ancestrors (make-array 10000 :initial-element nil))
   (index 0) ;; this is used for automatic node name generation
