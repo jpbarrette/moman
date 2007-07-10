@@ -151,18 +151,18 @@
     (format p "digraph G {~%  rankdir = LR;~%  size = \"8, 10\";~%") 
     (if (not (null (fsa-builder-finals fsa)))
 	(progn
-	  (format p "~%  node (shape = doublecircle);~% ")
+	  (format p "~%  node [shape = doublecircle];~% ")
 	  (dolist (x (fsa-builder-finals fsa))
             (format p " \"~A\"" (node-label x)))
 	  (format p ";")))
-    (format p "~%~%  node (shape = circle);~% ")
+    (format p "~%~%  node [shape = circle];~% ")
     (dolist (label (hash-keys (fsa-builder-nodes fsa)))
       (format p " \"~A\"" label))
     (format p ";~%~%")
     (dolist (node (hash-values (fsa-builder-nodes fsa)))
       (dolist (edge (node-edges node))
         (format p 
-                "  \"~A\" -> \"~A\" (label = \"~A\");~%"
+                "  \"~A\" -> \"~A\" [label = \"~A\"];~%"
                 (car edge)
                 (caddr edge)
                 (if (null (cadr edge))
