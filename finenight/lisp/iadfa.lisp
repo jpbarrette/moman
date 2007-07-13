@@ -1,8 +1,8 @@
 (declaim (optimize (speed 0) (space 0) (debug 3)))
 
 (defstruct iadfa 
-  (ancestrors (make-array 10000 :initial-element nil))
-  (index 0) ;; this is used for automatic node name generation
+  (ancestrors (make-array 100 :initial-element nil))
+  (index 2) ;; this is used for automatic node name generation
   (fsa (make-fsa :start-node (make-empty-node 0)))
   final)
 
@@ -10,10 +10,12 @@
   (let ((ancestrors (aref (iadfa-ancestrors iadfa) (node-label node))))
     (if (not ancestrors)
 	nil
-      (let ((src-nodes (remove final (gethash input ancestrors '()))))
-	(if (null src-nodes)
-	    nil
-	  (car src-nodes))))))
+	(reduce #'(lambda (result node)
+		    (if (eq (node-final node) final)
+			node
+			result))
+		(gethash input ancestrors '())
+		:initial-value nil))))
 
 (defun node-add-ancestror! (iadfa dst-node input src-node)
   (let ((ancestrors (aref (iadfa-ancestrors iadfa) (node-label dst-node))))
@@ -120,23 +122,22 @@
              
 
 
-
+(defun c-suffix (iadfa current-suffix node profile)
+  (if (eq 1 (length current-suffix))
+      (values node (reverse current-suffix) (reverse profile))
+      (let ((next-node (ancestror-transition iadfa node (car current-suffix) (car profile))))
+	(if (or (not next-node) (eq next-node (fsa-start-node (iadfa-fsa iadfa))))
+	    (values node (reverse current-suffix) (reverse profile))
+	    (c-suffix iadfa
+		      (cdr current-suffix)
+		      next-node
+		      (cdr profile))))))
 
 
 (defun common-suffix  (iadfa current-suffix node profile)
   ;; this function takes a suffix to be consumed
   ;; and a node to start from and the current stem
-  (labels ((c-suffix (iadfa current-suffix node profile)
-		     (if (eq 1 (length current-suffix))
-			 (cons node (reverse current-suffix))
-		       (let ((next-node (ancestror-transition iadfa node (car current-suffix) (car profile))))
-			 (if (or (not next-node) (eq next-node (fsa-start-node (iadfa-fsa iadfa))))
-			     (cons node (reverse current-suffix))
-			   (c-suffix iadfa
-				     (cdr current-suffix)
-				     next-node
-				     (cdr profile)))))))
-	  (c-suffix iadfa (reverse current-suffix) node (reverse profile))))
+  (c-suffix iadfa (reverse current-suffix) node (reverse profile)))
 
 (defun iadfa-add-edge! (iadfa src-node input dst-node)
   (node-add-edge! src-node input dst-node)
@@ -144,7 +145,7 @@
 
 (defun add-stem (iadfa prefix-node suffix-node current-stem profile)
   (let ((last-node prefix-node)
-	(last-input (last current-stem))
+	(last-input (car (last current-stem)))
 	(processing-stem (butlast current-stem)))
     (reduce #'(lambda (iadfa input)
 		(let ((new-node (make-empty-node (generate-state iadfa))))
@@ -162,10 +163,9 @@
 (defun handle-word (iadfa word)
   (let* ((fsa (iadfa-fsa iadfa)))
     (multiple-value-bind (prefix-node current-suffix profile) (common-prefix iadfa word (fsa-start-node fsa))
-	     (let* ((suffix (common-suffix iadfa current-suffix (iadfa-final iadfa) profile))
-		    (suffix-node (car suffix))
-		    (current-stem (cdr suffix)))
-	       (add-stem iadfa prefix-node suffix-node current-stem profile)
+	     (multiple-value-bind (suffix-node current-stem current-profile)
+		 (common-suffix iadfa current-suffix (iadfa-final iadfa) profile)
+	       (add-stem iadfa prefix-node suffix-node current-stem current-profile)
 	       (remove-ancestror-to-childs iadfa prefix-node))
 	     iadfa)))
 

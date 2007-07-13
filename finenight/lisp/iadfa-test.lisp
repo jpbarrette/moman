@@ -6,6 +6,8 @@
 					    "append" "appendice"
 					    "bappend" "bappendice"
 					    "cappend" "cappendice")))
+(defparameter *my-iadfa* (debug-gen-iadfa '("addendice"
+					    "append" "appendice")))
 
 (defparameter *my-fsa* (iadfa-fsa *my-iadfa*))
 
