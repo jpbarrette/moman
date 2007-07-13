@@ -33,9 +33,7 @@
     (if ancestrors
 	(progn 
 	  (hash-table-update! #'(lambda (nodes)
-				  (remove #'(lambda (node)
-					      (eq node src-node))
-					  nodes))
+				  (remove src-node nodes))
 			      input
 			      ancestrors)))))
 
