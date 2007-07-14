@@ -11,7 +11,7 @@
     (make-node :label label))
 
 (defun node-arity (node)
-  (hash-table-size (node-symbols-map node)))
+  (hash-table-count (node-symbols-map node)))
 
 (defun node-edges (node)
   (let ((label (node-label node)))
