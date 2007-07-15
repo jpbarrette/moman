@@ -44,6 +44,7 @@
 
 (defun delete-branch (iadfa stem-start-node stem-start-input stem-end-node)
   (remove-ancestror-to-childs iadfa stem-end-node)
+  ;(setf (iadfa-index iadfa) (node-label (car (node-transition stem-start-node stem-start-input))))
   (node-remove-dsts-for-input! stem-start-node stem-start-input))
 
 
@@ -100,24 +101,22 @@
 		       (if (eq (iadfa-final iadfa) node)
 			   (progn
 			     (delete-branch iadfa stem-start-node stem-start-input stem-end-node)
-			     (if (equal actual-word (concatenate 'list "0-BALANCE-TRANSFERS"))
-				 (break))
 			     (values stem-start-node (append stem word) (append profile (make-list (- (length word) 1) :initial-element nil))))
-			 (let ((next-node (node-transition node (car word))))
-			   (if (null next-node)
-			       (values node word (make-list (length word) :initial-element nil))
-			     (progn (setf next-node (car next-node))
-				    (if (not found-stem)
-					(progn
-					  (setf profile (append profile (list (node-final next-node))))
-					  (setf stem (append stem (list (car word))))
-					  (setf stem-end-node node)
-					  (if (> (node-label node) (node-label next-node))
-					      (setf found-stem t))))
-                                   (c-prefix (cdr word)
-                                             next-node
-                                             (append prefix
-                                                     (list (car word))))))))))
+			   (let ((next-node (node-transition node (car word))))
+			     (if (null next-node)
+				 (values node word (make-list (length word) :initial-element nil))
+				 (progn (setf next-node (car next-node))
+					(setf stem (append stem (list (car word))))
+					(setf profile (append profile (list (node-final next-node))))
+					(if (not found-stem)
+					    (progn
+					      (setf stem-end-node node)
+					      (if (> (node-label node) (node-label next-node))
+						  (setf found-stem t))))
+					(c-prefix (cdr word)
+						  next-node
+						  (append prefix
+							  (list (car word))))))))))
 	    (c-prefix word node '()))))
 
              

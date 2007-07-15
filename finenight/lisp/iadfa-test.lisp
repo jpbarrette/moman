@@ -5,11 +5,14 @@
 (defparameter *my-iadfa* (debug-gen-iadfa '("addendice"
 					    "append" "appendice"
 					    "bappend" "bappendice"
-					    "cappend" "cappendice")))
+					    "cappend" "cappendice"
+					    "mormont")))
 
-(defparameter *my-iadfa* (debug-gen-iadfa '("addendicer"
-					    "addendico"
-					    "affend")))
+(defparameter *my-iadfa* (debug-gen-iadfa '("0-atransfers"
+					    "0-adance"
+					    "0-babobibobu"
+					    "0-balance"
+					    "0-balance-transfers")))
 
 
 (defparameter *my-iadfa* (debug-gen-iadfa '("addendice"
