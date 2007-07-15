@@ -77,7 +77,7 @@
 			     (read-line p nil 'eof)))
 		      ((eql line 'eof))
 		      (format t "~A~%" line)
-		      (apply func line))))
+		      (funcall func line))))
 		      
 (defun vector-walk (v func)
   (dotimes (x (array-dimension v 0) nil)

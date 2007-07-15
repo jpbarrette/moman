@@ -1,7 +1,7 @@
 (declaim (optimize (speed 0) (space 0) (debug 3)))
 
 (defstruct iadfa 
-  (ancestrors (make-array 100 :initial-element nil))
+  (ancestrors (make-array 100000 :initial-element nil))
   (index 2) ;; this is used for automatic node name generation
   (fsa (make-fsa :start-node (make-empty-node 0)))
   final)
@@ -86,6 +86,7 @@
 	(stem-start-node node)
 	(stem-start-input (car word))
 	(stem-end-node nil)
+	(actual-word word)
 	(profile '())
 	(found-stem '()))
     (labels ((c-prefix (word node prefix)
@@ -99,6 +100,8 @@
 		       (if (eq (iadfa-final iadfa) node)
 			   (progn
 			     (delete-branch iadfa stem-start-node stem-start-input stem-end-node)
+			     (if (equal actual-word (concatenate 'list "0-BALANCE-TRANSFERS"))
+				 (break))
 			     (values stem-start-node (append stem word) (append profile (make-list (- (length word) 1) :initial-element nil))))
 			 (let ((next-node (node-transition node (car word))))
 			   (if (null next-node)
@@ -170,7 +173,7 @@
 
 (defun gen-iadfa (words)
   (reduce #'(lambda (iadfa word) 
-	      (handle-word iadfa word))
+	      (handle-word iadfa (concatenate 'list word)))
 	words
 	:initial-value (build-iadfa)))
 
@@ -178,23 +181,33 @@
   (let ((index 0))
     (reduce #'(lambda (iadfa word)
 		(handle-word iadfa (concatenate 'list word))
-		(graphviz-export-to-file (make-fsa-builder-from-fsa (iadfa-fsa iadfa)) (concatenate 'string "iadfa" (format nil "~A" index) ".dot"))
-		(graphviz-export-to-file (build-fsa-from-ancestrors iadfa) (concatenate 'string "iadfa-ances" (format nil "~A" index) ".dot"))
+		(graphviz-export-to-file (make-fsa-builder-from-fsa (iadfa-fsa iadfa)) (concatenate 'string "output/iadfa" (format nil "~A" index) ".dot"))
+		(graphviz-export-to-file (build-fsa-from-ancestrors iadfa) (concatenate 'string "output/iadfa-ances" (format nil "~A" index) ".dot"))
 		(setf index (+ index 1))
 		iadfa)
 	    words
 	    :initial-value (build-iadfa))))
   
 (defun gen-iadfa-from-file (file)
+  (let ((iadfa (build-iadfa)))
+    (for-each-line-in-file 
+     file
+     #'(lambda (line)
+	 (format t "~A ~%" line)
+	 (handle-word iadfa (concatenate 'list line))
+	 iadfa))
+    (iadfa-fsa iadfa)))
+
+(defun debug-gen-iadfa-from-file (file)
   (let ((iadfa (build-iadfa))
 	(index 0))
     (for-each-line-in-file 
      file
      #'(lambda (line)
 	 (format t "~A ~%" line)
-	 (handle-word iadfa line)
-	 (graphviz-export-to-file (make-fsa-builder-from-fsa (iadfa-fsa iadfa)) (concatenate 'string "iadfa" (format nil "~A" index) ".dot"))
-	 (graphviz-export-to-file (build-fsa-from-ancestrors iadfa) (concatenate 'string "iadfa-ances" (format nil "~A" index) ".dot"))
+	 (handle-word iadfa (concatenate 'list line))
+	 (graphviz-export-to-file (make-fsa-builder-from-fsa (iadfa-fsa iadfa)) (concatenate 'string "output/iadfa" (format nil "~A" index) ".dot"))
+	 (graphviz-export-to-file (build-fsa-from-ancestrors iadfa) (concatenate 'string "output/iadfa-ances" (format nil "~A" index) ".dot"))
 	 (setf index (+ index 1))
 	 iadfa))
     (iadfa-fsa iadfa)))

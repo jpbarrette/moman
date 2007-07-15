@@ -6,8 +6,19 @@
 					    "append" "appendice"
 					    "bappend" "bappendice"
 					    "cappend" "cappendice")))
+
+(defparameter *my-iadfa* (debug-gen-iadfa '("addendicer"
+					    "addendico"
+					    "affend")))
+
+
 (defparameter *my-iadfa* (debug-gen-iadfa '("addendice"
 					    "append" "appendice")))
+
+;(defparameter *my-fsa* (gen-iadfa-from-file "../../data/test.dico"))
+(defparameter *my-fsa* (gen-iadfa-from-file "com.zone.sorted.small"))
+(defparameter *my-fsa* (debug-gen-iadfa-from-file "com.zone.sorted.small.very"))
+(graphviz-export-to-file (make-fsa-builder-from-fsa *my-fsa*) "export.dot")
 
 (defparameter *my-fsa* (iadfa-fsa *my-iadfa*))
 
