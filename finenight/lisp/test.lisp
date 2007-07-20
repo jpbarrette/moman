@@ -6,6 +6,6 @@
   (format nil "~A ~%" s))
 
 (let ((syms '()))
-  (do-symbols (s :com.rrette.finenight.fsa)
+  (do-symbols (s :com.rrette.finenight.iadfa)
     (setf syms (cons s syms)))
   syms)

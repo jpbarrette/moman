@@ -4,7 +4,7 @@
 (in-package :com.rrette.finenight.iadfa)
 
 (defstruct iadfa 
-  (ancestrors (make-array 100000 :initial-element nil))
+  (ancestrors (make-array 1000000 :initial-element nil))
   (index 2) ;; this is used for automatic node name generation
   (fsa (make-fsa :start-node (make-empty-node 0)))
   final)
@@ -45,9 +45,17 @@
 		      (dolist (dst-node destination-nodes iadfa)
 			(node-remove-ancestror! iadfa dst-node input node)))))
 
+(defun remove-last-nodes (iadfa node-label)
+  (do ((i node-label (+ i 1)))
+      ((> i (iadfa-index iadfa)))
+    (setf (aref (iadfa-ancestrors iadfa) i) nil))
+  (setf (iadfa-index iadfa) node-label))
+  
+
 (defun delete-branch (iadfa stem-start-node stem-start-input stem-end-node)
   (remove-ancestror-to-childs iadfa stem-end-node)
-  ;(setf (iadfa-index iadfa) (node-label (car (node-transition stem-start-node stem-start-input))))
+  (let ((old-label (node-label (car (node-transition stem-start-node stem-start-input)))))
+    (remove-last-nodes iadfa old-label))
   (node-remove-dsts-for-input! stem-start-node stem-start-input))
 
 
@@ -90,7 +98,6 @@
 	(stem-start-node node)
 	(stem-start-input (car word))
 	(stem-end-node nil)
-	(actual-word word)
 	(profile '())
 	(found-stem '()))
     (labels ((c-prefix (word node prefix)
