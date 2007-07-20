@@ -1,3 +1,5 @@
+(in-package :com.rrette.finenight.fsa-builder)
+
 ;; initial-state speak of itself.
 ;; final-states is a list of nodes considered as final
 ;; transitions is a list of 3-tuple. (source-node input-symbol destination-node)

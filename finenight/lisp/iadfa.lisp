@@ -1,4 +1,7 @@
-(declaim (optimize (speed 0) (space 0) (debug 3)))
+;(declaim (optimize (speed 3) (space 3) (debug 0)))
+;(declaim (optimize (speed 0) (space 0) (debug 3)))
+
+(in-package :com.rrette.finenight.iadfa)
 
 (defstruct iadfa 
   (ancestrors (make-array 100000 :initial-element nil))

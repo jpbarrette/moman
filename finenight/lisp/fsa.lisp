@@ -1,3 +1,6 @@
+;(declaim (optimize (speed 3) (space 3) (debug 0)))
+
+(in-package :com.rrette.finenight.fsa)
 
 ;; the node consists of a label and a map a symbol to 
 ;; a destination object. 
@@ -16,15 +19,15 @@
 (defun node-edges (node)
   (let ((label (node-label node)))
     (labels ((S (symbols)
-		(if (null symbols)
-		    '()
-		  (concatenate 'list (mapcar #'(lambda (dest-node)
-						 (list label 
-						       (car symbols) 
-						       (node-label dest-node)))
-					     (node-transition node (car symbols)))
-			       (S (cdr symbols))))))
-	    (S (node-symbols node)))))
+	       (if (null symbols)
+		   '()
+		   (concatenate 'list (mapcar #'(lambda (dest-node)
+						  (list label 
+							(car symbols) 
+							(node-label dest-node)))
+					      (node-transition node (car symbols)))
+				(S (cdr symbols))))))
+      (S (node-symbols node)))))
 
 (defun node-symbols (node)
     (hash-keys (node-symbols-map node)))

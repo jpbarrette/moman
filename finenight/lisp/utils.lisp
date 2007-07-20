@@ -1,4 +1,5 @@
-(declaim (optimize (speed 0) (space 0) (debug 3)))
+
+(in-package :com.rrette.finenight.utils)
 
 (defun copy-hash-table (hash &key (test 'eql)) 
   (let ((h (make-hash-table :test test)))

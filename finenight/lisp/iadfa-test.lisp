@@ -1,6 +1,12 @@
-;(require :org.ancar.CLUnit "CLUnit.lisp")
+(require :org.ancar.CLUnit "CLUnit")
+(require :com.rrette.finenight "finenight")
 
 ;(import 'org.ancar.CLUnit::deftest)
+(in-package :cl-user)
+
+(use-package :com.rrette.finenight.fsa)
+(use-package :com.rrette.finenight.fsa-builder)
+(use-package :com.rrette.finenight.iadfa)
 
 (defparameter *my-iadfa* (debug-gen-iadfa '("addendice"
 					    "append" "appendice"
@@ -19,8 +25,8 @@
 					    "append" "appendice")))
 
 ;(defparameter *my-fsa* (gen-iadfa-from-file "../../data/test.dico"))
-(defparameter *my-fsa* (gen-iadfa-from-file "com.zone.sorted.small"))
-(defparameter *my-fsa* (debug-gen-iadfa-from-file "com.zone.sorted.small.very"))
+;(defparameter *my-fsa* (gen-iadfa-from-file "com.zone.sorted.small"))
+(defparameter *my-fsa* (gen-iadfa-from-file "com.zone.sorted.small.very"))
 (graphviz-export-to-file (make-fsa-builder-from-fsa *my-fsa*) "export.dot")
 
 (defparameter *my-fsa* (iadfa-fsa *my-iadfa*))
