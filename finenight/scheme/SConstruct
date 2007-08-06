@@ -1,0 +1,23 @@
+# -*- coding: utf-8 -*-
+# Copyright (C) 2005 José Pablo Ezequiel "Pupeno" Fernández Silva
+#
+# This file is part of scons-chicken.
+#
+# scons-chicken is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation; either version 2 of the License, or (at your option) any later version.
+# scons-chicken is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+# You should have received a copy of the GNU General Public License along with scons-chicken; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
+
+# Create an environment including the scons-chicken tool.
+env = Environment(tools = ["default", "chicken"], toolpath=["./"])
+# The previous line is to use the non-installed scons-chicken. In your project use:
+#env = Environment(tools = ["default", "chicken"])
+
+# sc-sap (executable binary) made of sc-sap.scm.
+#fsatest = env.ChickenProgram(env, "fsa-test", ["fsa-test.scm", "fsa.scm"])
+#env.Install('/usr/local/bin/', fsatest)
+iadfa_run = env.ChickenProgram(env, "iadfa-run", ["fsa.scm", "iadfa.scm", "utils-scm.scm", "iadfa-run.scm"])
+#iadfa = env.ChickenProgram(env, "iadfa-run", ["fsa.scm", "iadfa.scm", "iadfa-run.scm"])
+env.Install('/usr/local/bin/', iadfa_run)
+
+# Install alias.
+env.Alias('install', '/usr/bin/')

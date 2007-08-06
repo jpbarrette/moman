@@ -1,0 +1,29 @@
+((egg "finenight.egg") ; This should never change
+
+ ; List here all the files that should be bundled as part of your egg.  Note
+ ; that (1) mpeg3.meta does not need to be listed here and (2) you might
+ ; want to include mpeg3-base.scm (if it exists).
+
+ (files "fsa.scm" "utils-scm.scm" "iadfa.scm" "finenight.html" "finenight.setup")
+
+ ; The following should only be present if the egg's documentation should be
+ ; generated from the wiki:
+
+ (doc-from-wiki)
+
+ ; Your egg's license:
+
+ (license "GPL")
+
+ ; Pick one from the list of categories (see below) for your egg and enter it
+ ; here.
+
+ (category web)
+
+ ; A list of eggs mpeg3 depends on.  If none, you can omit this declaration
+ ; altogether:
+
+ (needs format)
+
+ (author "Your Name Goes Here")
+ (synopsis "A basic description of the purpose of the egg."))
