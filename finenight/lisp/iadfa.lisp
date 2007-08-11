@@ -132,22 +132,23 @@
              
 
 
-(defun c-suffix (iadfa current-suffix node profile)
+(defun c-suffix (iadfa current-suffix node prefix-node profile)
   (if (eq 1 (length current-suffix))
       (values node (reverse current-suffix) (reverse profile))
       (let ((next-node (ancestror-transition iadfa node (car current-suffix) (car profile))))
-	(if (or (not next-node) (eq next-node (fsa-start-node (iadfa-fsa iadfa))))
+	(if (or (not next-node) (eq next-node prefix-node) (eq next-node (fsa-start-node (iadfa-fsa iadfa))))
 	    (values node (reverse current-suffix) (reverse profile))
 	    (c-suffix iadfa
 		      (cdr current-suffix)
 		      next-node
+		      prefix-node
 		      (cdr profile))))))
 
 
-(defun common-suffix  (iadfa current-suffix node profile)
+(defun common-suffix  (iadfa current-suffix node prefix-node profile)
   ;; this function takes a suffix to be consumed
   ;; and a node to start from and the current stem
-  (c-suffix iadfa (reverse current-suffix) node (reverse profile)))
+  (c-suffix iadfa (reverse current-suffix) node prefix-node (reverse profile)))
 
 (defun iadfa-add-edge! (iadfa src-node input dst-node)
   (node-add-edge! src-node input dst-node)
@@ -174,7 +175,7 @@
   (let* ((fsa (iadfa-fsa iadfa)))
     (multiple-value-bind (prefix-node current-suffix profile) (common-prefix iadfa word (fsa-start-node fsa))
       (multiple-value-bind (suffix-node current-stem current-profile)
-	  (common-suffix iadfa current-suffix (iadfa-final iadfa) profile)
+	  (common-suffix iadfa current-suffix (iadfa-final iadfa) prefix-node profile)
 	(add-stem iadfa prefix-node suffix-node current-stem current-profile)
 	(if (> (node-arity prefix-node) 1)
 	    (remove-ancestror-to-childs iadfa prefix-node)))
@@ -198,12 +199,14 @@
 	    :initial-value (build-iadfa))))
   
 (defun gen-iadfa-from-file (file)
-  (let ((iadfa (build-iadfa)))
+  (let ((iadfa (build-iadfa))
+	(index 0))
     (for-each-line-in-file 
      file
      #'(lambda (line)
-	 (format t "~A ~%" line)
+	 (format t "~A ~A ~%" index line)
 	 (handle-word iadfa (concatenate 'list line))
+	 (setf index (+ index 1))
 	 iadfa))
     (iadfa-fsa iadfa)))
 
@@ -213,7 +216,6 @@
     (for-each-line-in-file 
      file
      #'(lambda (line)
-	 (format t "~A ~%" line)
 	 (handle-word iadfa (concatenate 'list line))
 	 (graphviz-export-to-file (make-fsa-builder-from-fsa (iadfa-fsa iadfa)) (concatenate 'string "output/iadfa" (format nil "~A" index) ".dot"))
 	 (graphviz-export-to-file (build-fsa-from-ancestrors iadfa) (concatenate 'string "output/iadfa-ances" (format nil "~A" index) ".dot"))

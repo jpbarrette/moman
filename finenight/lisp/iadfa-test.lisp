@@ -17,6 +17,14 @@
 					    "cappend" "cappendice"
 					    "mormont")))
 
+;; bad behavior where the common-suffix was going too far.
+;; We had a cycle on the W (1 -W> 2 -O> 3 -O> 1).
+(defparameter *my-iadfa* (debug-gen-iadfa '("08WL"
+					    "08WOOL"
+					    "08WOOOL"
+					    "08WOOOOL")))
+
+;; the stem wasn't long enough).
 (defparameter *my-iadfa* (debug-gen-iadfa '("0-atransfers"
 					    "0-adance"
 					    "0-babobibobu"
@@ -29,7 +37,7 @@
 
 ;(defparameter *my-fsa* (gen-iadfa-from-file "../../data/test.dico"))
 ;(defparameter *my-fsa* (gen-iadfa-from-file "com.zone.sorted.small"))
-(defparameter *my-fsa* (gen-iadfa-from-file "com.zone.sorted.small.very"))
+(defparameter *my-fsa* (gen-iadfa-from-file "com.zone.sorted.small"))
 ;(graphviz-export-to-file (make-fsa-builder-from-fsa *my-fsa*) "export.dot")
 
 (defparameter *my-fsa* (iadfa-fsa *my-iadfa*))

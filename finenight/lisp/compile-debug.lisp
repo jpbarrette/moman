@@ -7,3 +7,4 @@
 (compile-file "fsa.lisp")
 (compile-file "fsa-builder.lisp")
 (compile-file "iadfa.lisp")
+(compile-file "iadfa-run.lisp")
