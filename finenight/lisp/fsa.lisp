@@ -1,243 +1,117 @@
-(defpackage :com.rrette.finenight
-  (:use "COMMON-LISP")
-  (:nicknames "finenight")
-  (:export "add-edge"
-	   "build-fsa"
-	   "nadd-edge"
-	   "transition"))
+;(declaim (optimize (speed 3) (space 3) (debug 0)))
 
-(in-package :com.rrette.finenight)
-(provide :com.rrette.finenight.fsa)
+(in-package :com.rrette.finenight.fsa)
 
-(require :com.rrette.finenight.node "node.lisp")
-(require :com.rrette.finenight.utils "utils.lisp")
-
-(defstruct (fsa  (:copier nil))
-  states ;list of all states
-  alphabet 
-  start ;the starting state
-  finals ;list of final states
-  (nodes (make-hash-table))) ;the mapping from symbol -> states
-
-(defmethod is-final (label fsa)
-  (if (member label (fsa-finals fsa))
-      t))
-
-(defmethod is-final ((node node) fsa)
-  (if (member (node-name node) (fsa-finals fsa))
-      t))
-
-(defun copy-fsa (f)
-  "This function will copy the FSA.
-The hash table is a new instance."
-  (make-fsa :states (copy-list (fsa-states f))
-	    :alphabet (copy-list (fsa-alphabet f))
-	    :start (fsa-start f)
-	    :finals (fsa-finals f)
-	    :nodes (copy-hash-table (fsa-nodes f))))
-
-(defun has-node (label fsa)
-  (not (null (gethash label (fsa-nodes fsa)))))
+;; the node consists of a label and a map a symbol to 
+;; a destination object. 
+(defstruct (node (:copier nil))
+  label 
+  (symbols-map (make-hash-table :test 'equal))
+  (final nil))
 
 
-(defun check-fsa (fsa)
-  (progn 
-    (if (not (has-node (fsa-start fsa) fsa))
-	(add-node (make-node :name (fsa-start fsa)) fsa))
-    (mapcar (lambda (label)
-	      (if (not (has-node label fsa))
-		  (add-node (make-node :name label) fsa)))
-	    (fsa-finals fsa))
-    fsa))
+(defun make-empty-node (label)
+    (make-node :label label))
+
+(defun node-arity (node)
+  (hash-table-count (node-symbols-map node)))
+
+(defun node-edges (node)
+  (let ((label (node-label node)))
+    (labels ((S (symbols)
+	       (if (null symbols)
+		   '()
+		   (concatenate 'list (mapcar #'(lambda (dest-node)
+						  (list label 
+							(car symbols) 
+							(node-label dest-node)))
+					      (node-transition node (car symbols)))
+				(S (cdr symbols))))))
+      (S (node-symbols node)))))
+
+(defun node-symbols (node)
+    (hash-keys (node-symbols-map node)))
+
+(defun node-destinations (node)
+  (apply #'concatenate 'list (hash-values (node-symbols-map node))))
+
+(defun node-walk (node proc)
+    (maphash proc (node-symbols-map node)))
+
+(defun node-add-edge! (node input-symbol dst-node)
+  (hash-table-update! (lambda (lst)
+			(cons dst-node lst))
+		      input-symbol 
+		      (node-symbols-map node)))
+
+(defun node-remove-edge! (node input-symbol dst-node)
+  (let ((symbols-map (node-symbols-map node)))
+    (if (< 1
+	   (length (gethash input-symbol symbols-map)))
+	(hash-table-update! (lambda (lst)
+			      (delete dst-node lst))
+			    input-symbol 
+			    symbols-map)
+      (remhash input-symbol symbols-map))
+    node))
+
+;; (define node-remove-dst!
+;;   (lambda (node dst-node)
+;;     (let ((symbols-map (node-symbols-map node)))
+;;       (map (lambda (symbol)
+;; 	     (hash-table-update!/default symbols-map 
+;; 				 symbol 
+;; 				 (lambda (lst)
+;; 				   (delete! dst-node lst eq?))
+;; 				 '()))
+;; 	   (node-symbols node)))
+;;     node))
+
+(defun node-remove-dsts-for-input! (node input)
+  (let ((symbols-map (node-symbols-map node)))
+    (remhash input symbols-map)
+    node))
 
 
-(defmethod build-fsa (alphabet edges start finals)
-  "This function build a fsa. 
-The 'edges' argument is a list of 3-tuple. 
-The 'final' argument is a list of vertices."
-  (let ((f (make-fsa :alphabet (copy-list alphabet)
-		     :start start 
-		     :finals finals)))
-    (mapcar (lambda (edge) 
-	      (nadd-edge edge f))
-	    edges)
-    (check-fsa f)))
+;; will return the list of destination nodes for the
+;; given node.
+(defun node-transition (node symbol)
+    (gethash symbol (node-symbols-map node)))
 
 
-(defmethod add-edge (edge (f fsa))
-  "This function adds an edge to a copy of the FSA."
-  (let* ((fsa (copy-fsa f))
-	 (src (edge-source edge))
-	 (dst (edge-destination edge))
-	 (nodes (fsa-nodes fsa))
-	 (node (gethash src nodes)))
-    (setf (gethash src nodes) 
-	  (add-edge edge node))
-    (if (null (gethash dst nodes))
-	(setf (gethash dst nodes) (make-node :name dst)))
-    fsa))
+;; (define node-is-equivalent
+;;   (lambda (lhs rhs)
+;;       (if (not (eq? (node-final lhs) (node-final rhs)))
+;; 	  #f
+;;           (let ((lhs-map (node-symbols-map lhs))
+;;                 (rhs-map (node-symbols-map rhs)))
+;;             (map-equal? lhs-map rhs-map)))))
+		  
 
 
+(defstruct (fsa (:copier nil))
+  start-node)
 
-;;;This function adds a node to an FSA.
-;;;This function is the destructive version
-;;;of add-edge.
-(defmethod nadd-edge (edge (f fsa))
-  (let* ((src (edge-source edge))
-	 (dst (edge-destination edge))
-	 (nodes (fsa-nodes f)))
-    (if (null (gethash dst nodes)) ;dst might not be in FSA
-	(add-node (make-node :name dst) f))
-    (if (null (gethash src nodes)) ;src might not be in FSA
-	(add-node (make-node :name src) f))
-    (nadd-edge edge (gethash src nodes))
-    f))
+(defun make-empty-fsa (start-label)
+  (make-fsa :start-node (make-empty-node start-label)))
 
-(defmethod nremove-edge (edge (fsa fsa))
-  (let ((node (fsa-node (edge-source edge) fsa)))
-    (if node
-	(progn 
-	  (nremove-edge edge node)
-	  (if (is-final node fsa)
-	      (setf (fsa-finals fsa) 
-		    (remove (node-name node) (fsa-finals fsa))))))
-    fsa))
-	
-(defmethod is-accessible (label fsa)
-  (let ((accessors nil))
-    (maphash (lambda (key node)
-		 (declare (ignore key))
-		 (if (node-access label node)
-		     (setf accessors (cons (node-name node) accessors))))
-	     (fsa-nodes fsa))
-    accessors))
-	     
-
-(defmethod is-accessible ((node node) fsa)
-  (is-accessible (node-name node) fsa))
-
-(defmethod nremove-node ((node node) fsa)
-  (nremove-node (node-name node) fsa))
-
-(defmethod nremove-node (label fsa)
-  (progn
-    (setf (fsa-finals fsa) 
-	  (remove label (fsa-finals fsa)))
-    (remhash label (fsa-nodes fsa))
-    fsa))
-
-(defun add-node (node fsa)
-  "This function add a node to the copy of the FSA"
-  (let ((name (node-name node))
-	(nodes (fsa-nodes fsa)))
-    (if (null (gethash name nodes))
-	(setf (gethash name nodes) node))))
+(defun accept? (fsa word)
+  (labels ((T (node word)
+	      (if (null word) 
+		  (node-final node)
+		(let ((nodes (node-transition node (car word))))
+		  (if (null nodes)
+		      nil
+		    (T (car nodes) (cdr word)))))))
+	  (T (fsa-start-node fsa) word)))
 
 
-(defun are-equivalent (lhs-label rhs-label fsa)
-  "Returns nil if they are not equivalent, return the rhs-label otherwise"
-  (let ((lhs (fsa-node lhs-label fsa))
-	(rhs (fsa-node rhs-label fsa)))
-    (if (and (equal (is-final lhs-label fsa)
-		    (is-final rhs-label fsa))
-	     (edges-are-equivalent (node-edges lhs)
-				   (node-edges rhs)))
-	rhs-label)))
+;(define-record-printer (fsa x out)
+;  (fprintf out
+;           "(fsa ~S ~S ~S)"
+;	   (fsa-initial-state x) (fsa-finals x) (hash-table->alist (fsa-nodes x))))
 
-
-;;;This function returns the node identified 
-;;;by the id specified.
-(defmethod fsa-node (id fsa)
-  "This function returns the node identified by the id specified."
-  (gethash id (fsa-nodes fsa)))
-
-(defmethod e-close-nodes (nodes-id fsa)
-  (uniqueness-set (append nodes-id
-			  (mapcan (lambda (src)
-				    (e-close (fsa-node src fsa)))
-				  nodes-id))))
-
-(defmethod transition (input id fsa)
-  (let ((node (fsa-node id fsa)))
-      (e-close-nodes 
-       (mapcan (lambda (src) 
-		 (node-transition input (fsa-node src fsa)))
-	       (cons id (e-close node)))
-       fsa)))
-
-(defmethod transition (input (ids cons) fsa)
-  (uniqueness-set (mapcan (lambda (id)
-			    (transition input id fsa))
-			  ids)))
-
-(defmethod e-transition (word fsa)
-  "This is the extended transition function for the FSA."
-  (let ((nodes (cons (fsa-start fsa) nil)))
-    (reduce (lambda (ids input)
-	      (transition (string input) ids fsa))
-	    word
-	    :initial-value nodes)))
-    
-(defmethod accepts (word fsa)
-  "This function returns true if the word is accepted by the FSA."
-  (some (lambda (node)
-	  (if (member node (fsa-finals fsa))
-	      t))
-	  (e-transition word fsa)))
-
-(defmethod graphviz-export (fsa &key (file nil) (xsize 8) (ysize 11))
-  "This function will write the dot description of the FSA in the stream."
-  (progn
-    (if (null file)
-	(graphviz-export-stream fsa :stream t :xsize xsize :ysize ysize)
-      (with-open-file (stream 
-		       file 
-		       :direction :output 
-		       :if-exists :supersede
-		       :if-does-not-exist :create)
-		      (graphviz-export-stream fsa 
-					      :stream stream
-					      :xsize xsize
-					      :ysize ysize)))
-    fsa))
-
-
-(defmethod graphviz-export-stream (fsa &key (stream t) (xsize 8) (ysize 11))
-  "This function will write the dot description of the FSA in the stream."
-  (progn
-    (format stream 
-	    "digraph G {~%  rankdir = LR;~%  size = \"~A, ~A\";~%" 
-	    xsize 
-	    ysize)
-    (format stream "  rotate = 90;~%")
-    (if (not (null (fsa-finals fsa)))
-	(progn 
-	  (format stream "~%  node [shape = doublecircle];~% ")
-	  (mapcar (lambda (x) 
-		    (format stream " \"~A\"" x))
-		  (fsa-finals fsa))))
-    (format stream ";~%~%  node [shape = circle];~% ")
-    (maphash (lambda (key node)
-	       (declare (ignore key))
-	       (format stream " \"~A\"" (node-name node)))
-	     (fsa-nodes fsa))
-    (format stream ";~%~%")
-    (maphash (lambda (key node)
-	       (declare (ignore key))
-	       (mapcar (lambda (edge)
-			 (format stream "  \"~A\" -> \"~A\" [label = \"~A\"];~%" 
-				 (edge-source edge)
-				 (edge-destination edge)
-				 (if (null (edge-symbol edge))
-				     "epsilon"
-				   (edge-symbol edge))))
-		       (node-edges node)))
-	     (fsa-nodes fsa))
-    (format stream "}~%")
-    fsa))
   
 
-
-
-
+  
 

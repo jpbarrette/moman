@@ -1,11 +1,5 @@
-(require :com.rrette.finenight.iadfa "iadfa.lisp")
-(in-package :com.rrette.finenight)
+(load "finenight")
 
-(let ((words nil))
-  (with-open-file (stream "../../data/test.dico")
-		  (do ((line (read-line stream nil)
-			     (read-line stream nil)))
-		      ((null line))
-		    (setf words (append words (cons line nil)))))
-  
-  (graphviz-export (gen-iadfa words) :file "export.dot"))
+(in-package :com.rrette.finenight.iadfa)
+
+(defparameter *my-fsa* (gen-iadfa-from-file "com.zone.sorted"))

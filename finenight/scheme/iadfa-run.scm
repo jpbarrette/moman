@@ -1,4 +1,4 @@
-(require-extension check)
+;(require-extension check)
 ;(require-extension iadfa)
 (include "iadfa.scm")
 

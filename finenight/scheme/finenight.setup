@@ -2,7 +2,7 @@
 ;(compile -s -O3 -inline -profile fsa.scm)
 ;(compile -s -O3 -inline -profile fsa-builder.scm)
 ;(compile -s -O3 -inline -profile iadfa.scm)
-(compile -O3 -inline -block iadfa-run.scm)
+(compile -O3 -inline -block -profile iadfa-run.scm)
 (install-program
   ; Name of your extension:
   'finenight

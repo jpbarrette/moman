@@ -1,15 +1,37 @@
-(define-extension fsa-builder)
+;(define-extension fsa-builder)
 
-(require-extension fsa)
+;(require-extension fsa)
 
 ;; initial-state speak of itself.
 ;; final-states is a list of nodes considered as final
 ;; transitions is a list of 3-tuple. (source-node input-symbol destination-node)
 (define-record fsa-builder initial-state nodes finals)
 
-(define-record-printer (fsa x out)
+(define-record-printer (fsa-builder x out)
   (fprintf out "(fsa ~S ~S ~S)"
 	   (fsa-builder-initial-state x) (fsa-builder-finals x) (hash-table->alist (fsa-builder-nodes x))))
+
+(define make-fsa-builder-from-fsa
+  (lambda (fsa)
+    (let ([fsa-builder (make-empty-fsa-builder (node-label (fsa-start-node fsa)))]
+          [nodes (list (fsa-start-node fsa))])
+      (letrec ([retreive-nodes (lambda (n)
+                                 (if (null? n)
+                                     (build-fsa-builder-with-nodes)
+                                     (begin
+                                       (set! nodes (cons (car n) nodes))
+                                       (retreive-nodes (append (cdr n) (lset-difference eq?
+                                                                                        (node-destinations (car n))
+                                                                                        nodes))))))]
+               [build-fsa-builder-with-nodes
+                (lambda ()
+                  (for-each (lambda (node)
+                              (fsa-add-node! fsa-builder node))
+                            nodes))])
+        (retreive-nodes nodes))
+      fsa-builder)))
+
+      
 
 (define fsa-initial-node
   (lambda (fsa)
@@ -65,8 +87,8 @@
 
 (define fsa-add-edge!
   (lambda (fsa src-label input-symbol dst-label)
-    (let ((src-node (my-hash-table-get! (fsa-builder-nodes fsa) src-label (lambda () (make-empty-node src-label))))
-	  (dst-node (my-hash-table-get! (fsa-builder-nodes fsa) dst-label (lambda () (make-empty-node dst-label)))))
+    (let ((src-node (hash-table-update!/default (fsa-builder-nodes fsa) src-label (lambda (x) x) (make-empty-node src-label)))
+	  (dst-node (hash-table-update!/default (fsa-builder-nodes fsa) dst-label (lambda (x) x) (make-empty-node dst-label))))
       (node-add-edge! src-node input-symbol dst-node)
       fsa)))
 
@@ -80,7 +102,7 @@
 (define fsa-remove-edge!
   (lambda (fsa src-label input-symbol dst-label)
     (let ((src-node (hash-table-ref/default (fsa-builder-nodes fsa) src-label #f))
-	  (dst-node (hash-table-ref/default (fsa-nodes fsa) dst-label #f)))
+	  (dst-node (hash-table-ref/default (fsa-builder-nodes fsa) dst-label #f)))
       (if (and src-node dst-node)
           (node-remove-edge! src-node input-symbol dst-node))
       fsa)))
@@ -99,7 +121,7 @@
 (define make-empty-fsa-builder
   (lambda (initial-label)
     (let ((fsa (make-fsa-builder initial-label (make-hash-table) (list))))
-      (my-hash-table-get! (fsa-builder-nodes fsa) initial-label (lambda () (make-empty-node initial-label)))
+      (hash-table-update!/default (fsa-builder-nodes fsa) initial-label (lambda (x) x) (make-empty-node initial-label))
       fsa)))
 
 (define get-node 
@@ -169,7 +191,7 @@
 
 (define fsa-add-final! 
   (lambda (fsa node-label)
-    (fsa-add-final! fsa (get-node fsa node-label))))
+    (fsa-add-final-node! fsa (get-node fsa node-label))))
 
 (define fsa-add-final-node! 
   (lambda (fsa node)
@@ -177,10 +199,20 @@
     (node-final-set! node #t)
     fsa))
 
+(define fsa-add-node!
+  (lambda (fsa node)
+    (if (node-final node)
+        (fsa-add-final-node! fsa node))
+    (hash-table-update!/default (fsa-builder-nodes fsa) (node-label node) (lambda (n) node) node)))
+
 (define graphviz-export
   (lambda (fsa) 
+    (graphviz-export-to-file fsa "test.dot")))
+
+(define graphviz-export-to-file
+  (lambda (fsa file) 
     "This function will write the dot description of the FSA in the stream."
-    (let ((p (open-output-file "test.dot")))
+    (let ((p (open-output-file file)))
      (display (format "digraph G {~%  rankdir = LR;~%  size = \"8, 10\";~%") 
 	      p)
      ;(display (format "  rotate = 90;~%")
@@ -218,3 +250,14 @@
      (close-output-port p)
      fsa)))
 
+
+(define fsa-builder-accept? 
+  (lambda (fsa-builder word)
+    (letrec ((T (lambda (node word)
+                  (if (null? word) 
+                      (node-final node)
+                      (let ((nodes (node-transition node (car word))))
+                        (if (null? nodes)
+                            #f
+                            (T (car nodes) (cdr word))))))))
+      (T (fsa-initial-node fsa-builder) word))))

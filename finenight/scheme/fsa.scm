@@ -1,7 +1,7 @@
 ;(define-extension fsa)
-(require-extension format)
 
-(include "utils-scm.scm")
+(require-extension format)
+;(require-extension utils-scm)
 (require-extension srfi-1)
 
 
@@ -35,6 +35,10 @@
   (lambda (node)
     (apply append (hash-table-values (node-symbols-map node)))))
 
+(define node-arity
+  (lambda (node)
+    (hash-table-size (node-symbols-map node))))
+
 (define node-edges
   (lambda (node)
     (letrec ((label (node-label node))
@@ -48,6 +52,10 @@
 				   (node-transition node (car symbols)))
 			      (S (cdr symbols)))))))
       (S (node-symbols node)))))
+
+(define node-walk
+  (lambda (node proc)
+    (hash-table-walk (node-symbols-map node) proc)))
 
 (define node-edges2
   (lambda (node)
@@ -97,6 +105,12 @@
 	   (node-symbols node)))
     node))
 
+(define node-remove-dsts-for-input!
+  (lambda (node input)
+    (let ((symbols-map (node-symbols-map node)))
+      (hash-table-delete! symbols-map input)
+      node)))
+
 
 ;; will return the list of destination nodes for the
 ;; given node.
@@ -134,7 +148,8 @@
 
 
 ;(define-record-printer (fsa x out)
-;  (fprintf out "(fsa ~S ~S ~S)"
+;  (fprintf out
+;           "(fsa ~S ~S ~S)"
 ;	   (fsa-initial-state x) (fsa-finals x) (hash-table->alist (fsa-nodes x))))
 
   

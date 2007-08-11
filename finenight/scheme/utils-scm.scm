@@ -20,3 +20,11 @@
       (unless (eof-object? line)
         (proc line)
         (while)))))
+
+(define vector-walk
+  (lambda (vector func)
+    (let ([index 0])
+      (for-each (lambda (elem)
+                  (func index elem)
+                  (set! index (+ index 1)))
+                (vector->list vector)))))
