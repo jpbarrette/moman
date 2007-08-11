@@ -21,14 +21,6 @@
     (let ((lst-node (node-transition node input)))
       (car lst-node))))
 
-(define (hash-table-last-key ht)
-  (##sys#check-structure ht 'hash-table 'hash-table-keys)
-  (let* ([vec (##sys#slot ht 1)]
-         [bucket (##sys#slot vec 0)])
-    (##sys#slot bucket 0)))
-
-
-
 ;; This returns the last node's symbol (alphabetical order)
 ;;
 ;; We rely on the fact that hash-table-keys returns a reversed
