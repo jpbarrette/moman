@@ -35,23 +35,23 @@
 (defun node-destinations (node)
   (apply #'concatenate 'list (hash-values (node-symbols-map node))))
 
-(defun node-walk (node proc)
-    (maphash proc (node-symbols-map node)))
+(defmacro node-walk (node proc)
+  `(maphash ,proc (node-symbols-map ,node)))
 
 (defun node-add-edge! (node input-symbol dst-node)
-  (hash-table-update! (lambda (lst)
-			(cons dst-node lst))
-		      input-symbol 
-		      (node-symbols-map node)))
+  (hash-table-update! input-symbol 
+		      (node-symbols-map node)
+		      lst 
+		      (cons dst-node lst)))
 
 (defun node-remove-edge! (node input-symbol dst-node)
   (let ((symbols-map (node-symbols-map node)))
     (if (< 1
 	   (length (gethash input-symbol symbols-map)))
-	(hash-table-update! (lambda (lst)
-			      (delete dst-node lst))
-			    input-symbol 
-			    symbols-map)
+	(hash-table-update! input-symbol 
+			    symbols-map
+			    lst
+			    (delete dst-node lst))
       (remhash input-symbol symbols-map))
     node))
 

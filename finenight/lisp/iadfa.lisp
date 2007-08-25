@@ -26,19 +26,15 @@
 	(progn
 	  (setf ancestrors (make-hash-table))
 	  (setf (aref (iadfa-ancestrors iadfa) (node-label dst-node)) ancestrors)))
-    (hash-table-update!	#'(lambda (nodes)
-			    (cons src-node nodes))
-			input
-			ancestrors)))
+    (hash-table-update!	input ancestrors nodes
+			(cons src-node nodes))))
     
 (defun node-remove-ancestror! (iadfa dst-node input src-node)
   (let ((ancestrors (aref (iadfa-ancestrors iadfa) (node-label dst-node))))
     (if ancestrors
 	(progn 
-	  (hash-table-update! #'(lambda (nodes)
-				  (remove src-node nodes))
-			      input
-			      ancestrors)))))
+	  (hash-table-update! input ancestrors nodes
+			      (remove src-node nodes))))))
 
 (defun remove-ancestror-to-childs (iadfa node)
   (node-walk node #'(lambda (input destination-nodes)
@@ -200,15 +196,25 @@
   
 (defun gen-iadfa-from-file (file)
   (let ((iadfa (build-iadfa))
-	(index 0))
+	(index 0)
+	(last-time (get-internal-real-time))
+	(nb-per-hours 0)
+	(nb-hours-for-all 0))
     (for-each-line-in-file 
      file
      #'(lambda (line)
-	 (format t "~A ~A ~%" index line)
+	 (format t "~,2F w/h ~,2F Hours ~A ~A ~%"  nb-per-hours nb-hours-for-all index line)
 	 (handle-word iadfa (concatenate 'list line))
-	 (setf index (+ index 1))
+	 (incf index)
+	 (if (zerop (mod index 10000))
+	     (let ((current-time (get-internal-real-time)))
+	       (setf nb-per-hours (float (* 10000 (/ 1 (/ (- current-time last-time) internal-time-units-per-second)) 60 60)))
+	       (setf nb-hours-for-all (float (/ (* 6500 (/ (- current-time last-time) internal-time-units-per-second)) 60 60)))
+	       (setf last-time current-time)))
 	 iadfa))
     (iadfa-fsa iadfa)))
+
+
 
 (defun debug-gen-iadfa-from-file (file)
   (let ((iadfa (build-iadfa))
@@ -223,5 +229,9 @@
 	 iadfa))
     (iadfa-fsa iadfa)))
 
-
+;; (defun dump-words (iadfa)
+;;   (let ((fsa (iadfa-fsa))
+;; 	(states (list (cons "" (fsa-start-node start)))))
+;;     states))
+    
 

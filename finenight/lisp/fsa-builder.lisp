@@ -142,7 +142,11 @@
 (defun fsa-add-node! (fsa node)
   (if (node-final node)
       (fsa-add-final-node! fsa node))
-  (hash-table-update! #'(lambda (n) (declare (ignore n)) node) (node-label node)  (fsa-builder-nodes fsa)))
+  (hash-table-update! (node-label node)  
+		      (fsa-builder-nodes fsa)
+		      n
+		      (declare (ignore n))
+		      node))
 
 (defun graphviz-export (fsa) 
     (graphviz-export-to-file fsa "test.dot"))
