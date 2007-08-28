@@ -1,0 +1,9 @@
+Jean-Philippe Barrette-LaPierre (13 April 2005) version 0.1.0
+- The recognize script now uses [schulz02fast] algorithm
+  by default.
+
+Jean-Philippe Barrette-LaPierre (07 April 2005) version 0.0.0
+- Reorganized the files hierarchy.
+- Fixed the Fast String Correction algorithm.
+- setup.py added.
+

@@ -1,0 +1,13 @@
+Changes from version 0.2.0 to 0.2.1:
+- Adding Fast string correction to lisp code
+
+Changes from version 0.1.0 to 0.1.1:
+- The recognize script now uses [schulz02fast] algorithm
+  by default.
+- The Levenshtein automaton [oflazer96errortolerant] algorithm
+  is added.
+
+Changes from version 0.0.0 to 0.1.0:
+- Reorganized the files hierarchy.
+- Fixed the Fast String Correction algorithm.
+- setup.py added.

@@ -1,0 +1,13 @@
+;(compile -s -O3 -inline -profile utils-scm.scm)
+;(compile -s -O3 -inline -profile fsa.scm)
+;(compile -s -O3 -inline -profile fsa-builder.scm)
+;(compile -s -O3 -inline -profile iadfa.scm)
+(compile -O3 -inline -block -profile iadfa-run.scm)
+(install-program
+  ; Name of your extension:
+  'finenight
+  ; Files to install for your extension:
+  '("iadfa-run")
+  ; Assoc list with properties for your extension:
+  '((version 1.2)
+    (documentation "fsa.html")))
