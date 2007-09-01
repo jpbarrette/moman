@@ -92,6 +92,10 @@
 		      ((eql line 'eof))
 		      (funcall func line))))
 		      
-(defun vector-walk (v func)
-  (dotimes (x (array-dimension v 0) nil)
-    (funcall func x (aref v x))))
+(defmacro vector-walk ((index value vector) &rest body)
+  (with-syms (vec)
+    `(let ((,vec ,vector))
+       (dotimes (,index (array-dimension ,vec 0) nil)
+	 (let ((,value (aref ,vec ,index)))
+	   ,@body)))))
+

@@ -17,6 +17,17 @@
 					    "cappend" "cappendice"
 					    "mormont")))
 
+(defparameter *my-iadfa* (debug-gen-iadfa '("0-APR-CREDIT-CARD"
+					    "0-APR-CREDIT-CARD-4U"
+					    "0-APR-CREDIT-CARD-APPLICATION"
+					    "0-APR-CREDIT-CARD-OFFERS"
+					    "0-APR-CREDIT-CARD-ONLINE"
+					    "0-APR-CREDIT-CARDS"
+					    "0-APR-CREDITCARD"
+					    "0-APR-CREDITCARDS"
+					    "0-APR-CREDITS-CARD"))
+
+
 ;; bad behavior where the common-suffix was going too far.
 ;; We had a cycle on the W (1 -W> 2 -O> 3 -O> 1).
 (defparameter *my-iadfa* (debug-gen-iadfa '("08WL"
@@ -38,8 +49,10 @@
 					    "0-balance-transfers")))
 
 
-(defparameter *my-iadfa* (debug-gen-iadfa '("addendice"
-					    "append" "appendice")))
+(defparameter *my-iadfa* (gen-iadfa '("addendice"
+				      "append" "appendice")))
+
+(com.rrette.finenight.fsa::save-fsa (iadfa-fsa *my-iadfa*))
 
 ;(defparameter *my-fsa* (gen-iadfa-from-file "../../data/test.dico"))
 ;(defparameter *my-fsa* (gen-iadfa-from-file "com.zone.sorted.small"))

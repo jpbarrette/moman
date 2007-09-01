@@ -109,6 +109,8 @@
 		    (T (car nodes) (cdr word)))))))
 	  (T (fsa-start-node fsa) word)))
 
+(defun save-fsa (fsa)
+  (write fsa :circle t))
 
 ;(define-record-printer (fsa x out)
 ;  (fprintf out

@@ -4,13 +4,14 @@
 (in-package :com.rrette.finenight.iadfa)
 
 (defstruct iadfa 
-  (ancestrors (make-array 1000000 :initial-element nil))
+  (ancestrors (make-array 10000000 :initial-element nil) :type vector)
   (index 2) ;; this is used for automatic node name generation
   (unused-nodes nil)
   (fsa (make-fsa :start-node (make-empty-node 0)))
   final)
 
 (defun ancestror-transition (iadfa node input final)
+  (declare (iadfa iadfa))
   (let ((ancestrors (aref (iadfa-ancestrors iadfa) (node-label node))))
     (if (not ancestrors)
 	nil
@@ -44,21 +45,30 @@
 	     (new-node (node-reset (car unused-nodes))))
 	(setf (iadfa-unused-nodes iadfa) (cdr unused-nodes))
 	new-node)))
-	       
 
 (defun remove-ancestror-to-childs (iadfa node)
   (node-walk node #'(lambda (input destination-nodes)
 		      (dolist (dst-node destination-nodes iadfa)
 			(node-remove-ancestror! iadfa dst-node input node)))))
 
+(defun reclaim-branch (iadfa node node-end)
+  (node-reset node-end)
+  (let ((nodes-to-clean (list node)))
+    (do () 
+	(nodes-to-clean)
+      (let ((node-to-clean (pop nodes-to-clean)))
+	(setf nodes-to-clean (append nodes-to-clean 
+				     (node-destinations node-to-clean)))
+	(node-reset node-to-clean)
+	(setf (iadfa-unused-nodes iadfa) 
+	      (append (iadfa-unused-nodes iadfa) (list node-to-clean)))))))
+  
 (defun remove-last-nodes (iadfa node node-end)
-  (declare (ignore node-end))
   (let ((node-label (node-label node)))
     (do ((i node-label (+ i 1)))
 	((> i (iadfa-index iadfa)))
       (setf (aref (iadfa-ancestrors iadfa) i) nil))
     (setf (iadfa-index iadfa) node-label)))
-  
 
 (defun delete-branch (iadfa stem-start-node stem-start-input stem-end-node)
   (remove-ancestror-to-childs iadfa stem-end-node)
@@ -69,15 +79,13 @@
 
 (defun build-fsa-from-ancestrors (iadfa)
   (let ((fsa (make-fsa-builder)))
-    (vector-walk
-     (iadfa-ancestrors iadfa)
-     #'(lambda (label node-ancestrors)
-	 (if node-ancestrors
-	     (maphash
-	      #'(lambda (input nodes)
-		  (dolist (node nodes nil)
-		    (fsa-add-edge! fsa label input (node-label node))))
-	      node-ancestrors))))
+    (vector-walk (label node-ancestrors (iadfa-ancestrors iadfa))
+		 (if node-ancestrors
+		     (maphash
+		      #'(lambda (input nodes)
+			  (dolist (node nodes nil)
+			    (fsa-add-edge! fsa label input (node-label node))))
+		      node-ancestrors)))
     fsa))
     
 (defun iadfa-state-ancestrors (iadfa dst-label input)
@@ -127,7 +135,7 @@
 					(setf stem (append stem (list (car word))))
 					(setf profile (append profile (list (node-final next-node))))
 					(if (not found-stem)
-					    (progn
+					    (progn 
 					      (setf stem-end-node node)
 					      (if (> (node-label node) (node-label next-node))
 						  (setf found-stem t))))
