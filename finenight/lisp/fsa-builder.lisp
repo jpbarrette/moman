@@ -1,27 +1,17 @@
-(defpackage :com.rrette.finenight
-  (:use "COMMON-LISP")
-  (:nicknames "finenight")
-  (:export "make-fsa-builder"))
-
-
-(in-package :com.rrette.finenight)
-(provide :com.rrette.finenight.fsa-builder)
-
-(require :com.rrette.finenight.utils "utils.lisp")
-(require :com.rrette.finenight.fsa "fsa-scm.lisp")
+(in-package :com.rrette.finenight.fsa-builder)
 
 ;; initial-state speak of itself.
 ;; final-states is a list of nodes considered as final
 ;; transitions is a list of 3-tuple. (source-node input-symbol destination-node)
 (defstruct (fsa-builder (:copier nil))
-  initial-state 
+  (initial-state 0)
   (nodes (make-hash-table))
   (finals '()))
 
 
 (defun fsa-edges (fsa)
   (labels ((E  (nodes) 
-	       (if (null? nodes)
+	       (if (null nodes)
 		   '()
 		 (append (node-edges (car nodes))
 			 (E (cdr nodes))))))
@@ -46,8 +36,8 @@
 ;;          (node-destinations node))))
 
 (defun fsa-add-edge! (fsa src-label input-symbol dst-label)
-  (let ((src-node (hash-table-update!/default (fsa-builder-nodes fsa) src-label (lambda (x) x) (make-empty-node src-label)))
-	(dst-node (hash-table-update!/default (fsa-builder-nodes fsa) dst-label (lambda (x) x) (make-empty-node dst-label))))
+  (let ((src-node (hash-table-update!/default (lambda (x) x) src-label (fsa-builder-nodes fsa) (make-empty-node src-label)))
+	(dst-node (hash-table-update!/default (lambda (x) x) dst-label (fsa-builder-nodes fsa) (make-empty-node dst-label))))
     (node-add-edge! src-node input-symbol dst-node)
     fsa))
 
@@ -65,18 +55,18 @@
     fsa))
   
 (defun build-fsa (initial-label edges finals)
-  (let ((fsa (fold (lambda (edge fsa)
-		     (fsa-add-edge! fsa (car edge) (cadr edge) (caddr edge)))
-		   (make-empty-fsa-builder initial-label)
-		   edges)))
-    (fold (lambda (final fsa)
-	    (fsa-add-final! fsa final))
-	  fsa
-	  finals)))
+  (let ((fsa (reduce #'(lambda (edge fsa)
+			 (fsa-add-edge! fsa (car edge) (cadr edge) (caddr edge)))
+		     edges
+		     :initial-value (make-fsa-builder :initial-state initial-label))))
+    (reduce #'(lambda (final fsa)
+		(fsa-add-final! fsa final))
+	  finals
+	  :initial-value fsa)))
 
 (defun make-empty-fsa-builder (initial-label)
-  (let ((fsa (make-fsa-builder initial-label (make-hash-table) (list))))
-    (hash-table-update!/default (fsa-builder-nodes fsa) initial-label (lambda (x) x) (make-empty-node initial-label))
+  (let ((fsa (make-fsa-builder :initial-state initial-label)))
+    (hash-table-update!/default  (lambda (x) x) initial-label (fsa-builder-nodes fsa) (make-empty-node initial-label))
     fsa))
 
 (defun get-node (fsa node-label) 
@@ -152,36 +142,40 @@
 (defun fsa-add-node! (fsa node)
   (if (node-final node)
       (fsa-add-final-node! fsa node))
-  (hash-table-update! #'(lambda (n) (declare (ignore n)) node) (node-label node)  (fsa-builder-nodes fsa)))
+  (hash-table-update! (node-label node)  
+		      (fsa-builder-nodes fsa)
+		      n
+		      (declare (ignore n))
+		      node))
 
 (defun graphviz-export (fsa) 
     (graphviz-export-to-file fsa "test.dot"))
 
 (defun graphviz-export-to-file (fsa file) 
   "This function will write the dot description of the FSA in the stream."
-  (let ((p (open-output-file file)))
+  (let ((p (open file :direction :output :if-exists :supersede)))
     (format p "digraph G {~%  rankdir = LR;~%  size = \"8, 10\";~%") 
-    (if (not (null? (fsa-builder-finals fsa)))
+    (if (not (null (fsa-builder-finals fsa)))
 	(progn
-	  (format p "~%  node (shape = doublecircle);~% ")
+	  (format p "~%  node [shape = doublecircle];~% ")
 	  (dolist (x (fsa-builder-finals fsa))
             (format p " \"~A\"" (node-label x)))
 	  (format p ";")))
-    (format p "~%~%  node (shape = circle);~% ")
+    (format p "~%~%  node [shape = circle];~% ")
     (dolist (label (hash-keys (fsa-builder-nodes fsa)))
       (format p " \"~A\"" label))
     (format p ";~%~%")
     (dolist (node (hash-values (fsa-builder-nodes fsa)))
       (dolist (edge (node-edges node))
         (format p 
-                "  \"~A\" -> \"~A\" (label = \"~A\");~%"
+                "  \"~A\" -> \"~A\" [label = \"~A\"];~%"
                 (car edge)
                 (caddr edge)
-                (if (null? (cadr edge))
+                (if (null (cadr edge))
                     "epsilon"
                   (cadr edge)))))
     (format p "}~%") 
-    (close-output-port p)
+    (close p)
     fsa))
 
 
@@ -199,9 +193,9 @@
 				   (build-fsa-builder-with-nodes)
 				 (progn
 				   (setf nodes (cons (car n) nodes))
-				   (retreive-nodes (append (cdr n) (lset-difference #'eq
-										    (node-destinations (car n))
-										    nodes))))))
+				   (retreive-nodes (append (cdr n) (set-difference (node-destinations (car n))
+										   nodes
+										   :test #'eq))))))
 	       (build-fsa-builder-with-nodes ()
                                              (dolist (node nodes)
                                                (fsa-add-node! fsa-builder node))))
@@ -211,10 +205,10 @@
       
 (defun fsa-builder-accept? (fsa-builder word)
   (labels ((T (node word)
-	      (if (null? word) 
+	      (if (null word) 
 		  (node-final node)
 		(let ((nodes (node-transition node (car word))))
-		  (if (null? nodes)
+		  (if (null nodes)
 		      nil
 		    (T (car nodes) (cdr word)))))))
 	  (T (fsa-initial-node fsa-builder) word)))

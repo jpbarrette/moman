@@ -1,11 +1,17 @@
-(require :com.rrette.finenight.iadfa "iadfa.lisp")
-(in-package :com.rrette.finenight)
 
-(let ((words nil))
-  (with-open-file (stream "../../data/test.dico")
-		  (do ((line (read-line stream nil)
-			     (read-line stream nil)))
-		      ((null line))
-		    (setf words (append words (cons line nil)))))
-  
-  (graphviz-export (gen-iadfa words) :file "export.dot"))
+(load "finenight")
+
+(in-package :com.rrette.finenight.iadfa)
+
+(defun iadfa-run ()
+  (gen-iadfa-from-file "../../data/com.zone.sorted.small"))
+
+(gen-iadfa-from-file "../../data/com.zone.sorted.small")
+;(sb-ext:save-lisp-and-die "iadfa-run" :executable t :toplevel #'iadfa-run)
+
+
+(progn
+  (setf last-time (get-internal-real-time))
+  (sleep 3)
+  (setf current-time (get-internal-real-time))
+  (float (* 1000 (/ 1 (/ (- current-time last-time) internal-time-units-per-second)))))
