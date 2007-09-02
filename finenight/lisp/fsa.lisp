@@ -109,6 +109,14 @@
 		    (T (car nodes) (cdr word)))))))
 	  (T (fsa-start-node fsa) word)))
 
+;; (defun extract-words (fsa stream)
+;;   (do ((states (list (fsa-start-node fsa))))
+;;       ((null states))
+;;     (destructuring-bind (node word) (pop states))
+;;       (if (node-final node)
+;; 	  (format t "~A" word)
+;; 	  (node-walk))))
+
 (defun save-fsa (fsa)
   (write fsa :circle t))
 

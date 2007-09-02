@@ -4,8 +4,8 @@
 (in-package :com.rrette.finenight.iadfa)
 
 (defstruct iadfa 
-  (ancestrors (make-array 10000000 :initial-element nil) :type vector)
-  (index 2) ;; this is used for automatic node name generation
+  (ancestrors (make-array 1000000 :initial-element nil :fill-pointer 0) :type vector)
+  (index 0) ;; this is used for automatic node name generation
   (unused-nodes nil)
   (fsa (make-fsa :start-node (make-empty-node 0)))
   final)
@@ -40,9 +40,13 @@
 
 (defun get-fresh-node (iadfa)
   (if (null (iadfa-unused-nodes iadfa))
-      (make-empty-node (generate-state iadfa))
+      (progn 
+	(let ((new-label (generate-state iadfa)))
+	  (if (>= new-label (length (iadfa-ancestrors iadfa)))
+	      (vector-push (make-hash-table) (iadfa-ancestrors iadfa)))
+	  (make-empty-node new-label)))
       (let* ((unused-nodes (iadfa-unused-nodes iadfa))
-	     (new-node (node-reset (car unused-nodes))))
+	     (new-node (car unused-nodes)))
 	(setf (iadfa-unused-nodes iadfa) (cdr unused-nodes))
 	new-node)))
 
@@ -52,23 +56,26 @@
 			(node-remove-ancestror! iadfa dst-node input node)))))
 
 (defun reclaim-branch (iadfa node node-end)
-  (node-reset node-end)
-  (let ((nodes-to-clean (list node)))
-    (do () 
-	(nodes-to-clean)
-      (let ((node-to-clean (pop nodes-to-clean)))
-	(setf nodes-to-clean (append nodes-to-clean 
-				     (node-destinations node-to-clean)))
-	(node-reset node-to-clean)
-	(setf (iadfa-unused-nodes iadfa) 
-	      (append (iadfa-unused-nodes iadfa) (list node-to-clean)))))))
-  
+  (declare (ignore node-end))
+  ;(node-reset node-end)
+  (do ((i (node-label node) (+ i 1)))
+      ((>= i (iadfa-index iadfa)))
+    (clrhash (aref (iadfa-ancestrors iadfa) i))))
+
+;;     (do () 
+;; 	((null nodes-to-clean))
+;;       (let ((node-to-clean (pop nodes-to-clean)))
+;; 	(setf (aref (iadfa-ancestrors iadfa) (node-label node-to-clean)) nil)
+;; 	(setf nodes-to-clean (append nodes-to-clean 
+;; 				     (node-destinations node-to-clean)))
+;; 	(node-reset node-to-clean)
+;; 	(setf (iadfa-unused-nodes iadfa) 
+;; 	      (append (iadfa-unused-nodes iadfa) (list node-to-clean)))))))
+
+
 (defun remove-last-nodes (iadfa node node-end)
-  (let ((node-label (node-label node)))
-    (do ((i node-label (+ i 1)))
-	((> i (iadfa-index iadfa)))
-      (setf (aref (iadfa-ancestrors iadfa) i) nil))
-    (setf (iadfa-index iadfa) node-label)))
+  (reclaim-branch iadfa node node-end)
+  (setf (iadfa-index iadfa) (node-label node)))
 
 (defun delete-branch (iadfa stem-start-node stem-start-input stem-end-node)
   (remove-ancestror-to-childs iadfa stem-end-node)
@@ -105,7 +112,9 @@
     name))
 
 (defun build-iadfa ()
-  (let ((iadfa (make-iadfa :final (make-empty-node 1))))
+  (let ((iadfa (make-iadfa)))
+    (setf (iadfa-fsa iadfa) (make-fsa :start-node (get-fresh-node iadfa)))
+    (setf (iadfa-final iadfa) (get-fresh-node iadfa))
     (setf (node-final (iadfa-final iadfa)) t)
     iadfa))
 
@@ -214,7 +223,7 @@
 	    words
 	    :initial-value (build-iadfa))))
   
-(defun gen-iadfa-from-file (file)
+(defun gen-iadfa-from-file (file &key dump)
   (let ((iadfa (build-iadfa))
 	(index 0)
 	(last-time (get-internal-real-time))
@@ -225,6 +234,9 @@
      #'(lambda (line)
 	 (format t "~,2F w/h ~,2F Hours ~A ~A ~%"  nb-per-hours nb-hours-for-all index line)
 	 (handle-word iadfa (concatenate 'list line))
+	 (when (member index dump)
+	   (graphviz-export-to-file (make-fsa-builder-from-fsa (iadfa-fsa iadfa)) (concatenate 'string "output/iadfa" (format nil "~A" index) ".dot"))
+	   (graphviz-export-to-file (build-fsa-from-ancestrors iadfa) (concatenate 'string "output/iadfa-ances" (format nil "~A" index) ".dot")))
 	 (incf index)
 	 (if (zerop (mod index 1000))
 	     (let ((current-time (get-internal-real-time)))

@@ -25,7 +25,12 @@
 					    "0-APR-CREDIT-CARDS"
 					    "0-APR-CREDITCARD"
 					    "0-APR-CREDITCARDS"
-					    "0-APR-CREDITS-CARD"))
+					    "0-APR-CREDITS-CARD")))
+
+;; This situation would cause to have an empty ancestror fsa.
+(defparameter *my-iadfa* (debug-gen-iadfa '("0000"
+					    "0001")))
+
 
 
 ;; bad behavior where the common-suffix was going too far.

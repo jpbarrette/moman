@@ -9,4 +9,3 @@
 (compile-file "iadfa.lisp")
 (compile-file "iadfa-run.lisp")
 
-(quit)
