@@ -124,13 +124,13 @@
 	 ((null states))
        (destructuring-bind (src-node word) (pop states)
 	 (when (node-final src-node)
-	   (setf words (cons word words)))
+	   (setf words (nconc words (list word))))
 	 (node-sorted-walk src-node 
 			   #'(lambda (input dst-nodes)
 			       (push (list (car dst-nodes)
 					   (concatenate 'string word (string input)))
 				     states))
-			   :test #'char<)))
+			   :test #'char>)))
      words))
 			      
 
