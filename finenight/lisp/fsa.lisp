@@ -42,6 +42,13 @@
 (defmacro node-walk (node proc)
   `(maphash ,proc (node-symbols-map ,node)))
 
+(defun node-sorted-walk (node func &key (test #'char<))
+  (let* ((hash (node-symbols-map node))
+	 (keys (hash-keys hash)))
+    (setf keys (sort keys test))
+    (dolist (key keys)
+      (funcall func key (gethash key hash)))))
+      
 (defun node-add-edge! (node input-symbol dst-node)
   (hash-table-update! input-symbol 
 		      (node-symbols-map node)
@@ -80,7 +87,8 @@
 ;; will return the list of destination nodes for the
 ;; given node.
 (defun node-transition (node symbol)
-    (gethash symbol (node-symbols-map node)))
+  ;(format t "~S~%" (com.rrette.finenight.utils::hash->alist (node-symbols-map node)))
+  (gethash symbol (node-symbols-map node)))
 
 
 ;; (define node-is-equivalent
@@ -109,13 +117,22 @@
 		    (T (car nodes) (cdr word)))))))
 	  (T (fsa-start-node fsa) word)))
 
-;; (defun extract-words (fsa stream)
-;;   (do ((states (list (fsa-start-node fsa))))
-;;       ((null states))
-;;     (destructuring-bind (node word) (pop states))
-;;       (if (node-final node)
-;; 	  (format t "~A" word)
-;; 	  (node-walk))))
+ (defun extract-words (fsa)
+   (let ((words nil)
+	 (states (list (list (fsa-start-node fsa) ""))))
+     (do ()
+	 ((null states))
+       (destructuring-bind (src-node word) (pop states)
+	 (when (node-final src-node)
+	   (setf words (cons word words)))
+	 (node-sorted-walk src-node 
+			   #'(lambda (input dst-nodes)
+			       (push (list (car dst-nodes)
+					   (concatenate 'string word (string input)))
+				     states))
+			   :test #'char<)))
+     words))
+			      
 
 (defun save-fsa (fsa)
   (write fsa :circle t))

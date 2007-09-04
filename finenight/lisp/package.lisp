@@ -13,7 +13,8 @@
 	   :hash-values
 	   :hash-keys
 	   :uniqueness-set
-	   :vector-walk))
+	   :vector-walk
+	   :with-syms))
 
 (defpackage :com.rrette.finenight.fsa
   (:use :common-lisp
@@ -34,7 +35,8 @@
 	   :make-empty-fsa
 	   :make-empty-node
 	   :make-fsa
-	   :make-node))
+	   :make-node
+	   :extract-words))
 
 (defpackage :com.rrette.finenight.fsa-builder
   (:use :common-lisp

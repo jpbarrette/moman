@@ -79,8 +79,9 @@
 
 (defun delete-branch (iadfa stem-start-node stem-start-input stem-end-node)
   (remove-ancestror-to-childs iadfa stem-end-node)
-  (let ((old-node (car (node-transition stem-start-node stem-start-input))))
-    (remove-last-nodes iadfa old-node stem-end-node))
+  (when  (not (eq stem-start-node stem-end-node))
+    (let ((old-node (car (node-transition stem-start-node stem-start-input))))
+      (remove-last-nodes iadfa old-node stem-end-node)))
   (node-remove-dsts-for-input! stem-start-node stem-start-input))
 
 
@@ -244,7 +245,7 @@
 	       (setf nb-hours-for-all (float (/ (* 65000 (/ (- current-time last-time) internal-time-units-per-second)) 60 60)))
 	       (setf last-time current-time)))
 	 iadfa))
-    (iadfa-fsa iadfa)))
+    iadfa))
 
 
 (defun debug-gen-iadfa-from-file (file)

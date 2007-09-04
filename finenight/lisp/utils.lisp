@@ -49,6 +49,19 @@
           (return)))))
     values))
 
+(defun hash->alist (hash)
+  (let ((values nil))
+    (with-hash-table-iterator
+     (my-iterator hash)
+     (loop
+      (multiple-value-bind
+          (entry-p key value)
+          (my-iterator)
+        (if entry-p
+            (setf values (cons (cons key value) values))
+          (return)))))
+    values))
+
 (defun hash-keys (hash)
   (let ((keys nil))
     (with-hash-table-iterator
