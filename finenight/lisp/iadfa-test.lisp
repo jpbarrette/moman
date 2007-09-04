@@ -72,6 +72,14 @@ We had a cycle on the W (1 -W> 2 -O> 3 -O> 1)."
 		      "0-balance"
 		      "0-balance-transfers")))
 
+(defun iadfa-test5 ()
+  "When we add 0-SUNGKOREA the stem starts within the common suffixes. 
+So we add the stem within the suffixes which create new words"
+  (test-equivalence '("0-FORUM" 
+		      "0-SUM"
+		      "0-SUNGKOREA")))
+
+(iadfa-test5)
 
 (org.ancar.CLUnit::deftest "IADFA Test 1"
     :category "Destinations" 
@@ -88,6 +96,10 @@ We had a cycle on the W (1 -W> 2 -O> 3 -O> 1)."
 (org.ancar.CLUnit::deftest "IADFA Test 4"
     :category "Destinations" 
     :test-fn #'iadfa-test4)
+
+(org.ancar.CLUnit::deftest "IADFA Test 5"
+    :category "Destinations" 
+    :test-fn #'iadfa-test5)
 
 (org.ancar.CLUnit::run-all-tests)
 

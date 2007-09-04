@@ -89,23 +89,28 @@
   (let ((fsa (make-fsa-builder)))
     (vector-walk (label node-ancestrors (iadfa-ancestrors iadfa))
 		 (if node-ancestrors
-		     (maphash
-		      #'(lambda (input nodes)
-			  (dolist (node nodes nil)
-			    (fsa-add-edge! fsa label input (node-label node))))
-		      node-ancestrors)))
+		     (maphash #'(lambda (input nodes)
+				  (dolist (node nodes nil)
+				    (fsa-add-edge! fsa label input (node-label node))))
+			      node-ancestrors)))
     fsa))
     
-(defun iadfa-state-ancestrors (iadfa dst-label input)
+(defun iadfa-state-ancestrors-for-input (iadfa dst-label input)
   (let ((ancestrors (aref (iadfa-ancestrors iadfa) dst-label)))
     (if ancestrors
 	(mapcar #'(lambda (node)
 		    (node-label node))
 		(gethash input ancestrors))
       '())))
+
+(defun node-ancestrors (iadfa node)
+  (let ((ancestrors (aref (iadfa-ancestrors iadfa) (node-label node))))
+    (if ancestrors
+	(apply #'append (hash-values ancestrors))
+      '())))
     
-(defun node-ancestrors (iadfa dst-node input)
-  (iadfa-state-ancestrors iadfa (node-label dst-node) input))
+(defun node-ancestrors-for-input (iadfa dst-node input)
+  (iadfa-state-ancestrors-for-input iadfa (node-label dst-node) input))
     
 (defun generate-state (iadfa)
   (let ((name (iadfa-index iadfa)))
@@ -144,11 +149,11 @@
 				 (progn (setf next-node (car next-node))
 					(setf stem (append stem (list (car word))))
 					(setf profile (append profile (list (node-final next-node))))
-					(if (not found-stem)
-					    (progn 
-					      (setf stem-end-node node)
-					      (if (> (node-label node) (node-label next-node))
-						  (setf found-stem t))))
+					(when (not found-stem)
+					  (setf stem-end-node node)
+					  (when (< 1 (length (node-ancestrors iadfa next-node)))
+					    (break)
+					    (setf found-stem t)))
 					(c-prefix (cdr word)
 						  next-node
 						  (append prefix
