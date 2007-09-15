@@ -3,6 +3,7 @@
 import getopt
 import os
 import pickle
+import pprint
 import sys
 
 
@@ -174,6 +175,7 @@ if __name__ == "__main__":
             debug("Using Schulz's algoritm")
             from fsc import ErrorTolerantRecognizer
             transitionStates = getTransitionStates(transitionsFile, distance)
+            pprint.pprint(transitionStates)
         else:
             debug("Using Flazer's algorithm")
             from et import ErrorTolerantRecognizer

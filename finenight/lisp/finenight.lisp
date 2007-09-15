@@ -1,4 +1,4 @@
-(load "package.lisp")
+(load "package")
 (load "utils")
 (load "fsa")
 (load "fsa-builder")

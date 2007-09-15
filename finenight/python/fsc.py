@@ -208,8 +208,8 @@ def isLikeStates(state, lowerStates):
     return isLike
     
 
-def delta( (stateType, index), character, input, states ):
-    cv = characterizedVector( character, input )[:3]
+def delta( n, (stateType, index), character, input, states ):
+    cv = characterizedVector( character, input )[:(2 * n + 1)]
     l = len(cv)
     w = states[l]
     cv = str(cv)
@@ -251,7 +251,7 @@ class ErrorTolerantRecognizer:
         while len(states):
             (V, q, M) = states.pop()
             for (x, q1) in fsa.states[q].transitions.items():
-                mPrime = delta( M, x, word[M[1]:], self.transitionsStates )
+                mPrime = delta( self.n, M, x, word[M[1]:], self.transitionsStates )
                 if mPrime[0] != []:
                     V1 = V + x
                     states.append((V1, q1, mPrime))

@@ -30,6 +30,7 @@
 	   :node-label
 	   :node-remove-edge!
 	   :node-remove-dsts-for-input!
+	   :node-symbols
 	   :node-transition
 	   :node-walk
 	   :make-empty-fsa
