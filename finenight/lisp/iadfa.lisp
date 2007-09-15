@@ -214,19 +214,21 @@
     (reduce #'(lambda (iadfa input)
 		(let ((new-node (get-fresh-node iadfa)))
 		  (setf (node-final new-node) (car profile))
-		  (when sub-prefix
-		    (when (= 1 (length sub-prefix))
-		      (iadfa-add-edge! iadfa last-node (car sub-prefix) sub-node))
-		    (setf sub-prefix (cdr sub-prefix)))
 		  (setf profile (cdr profile))
 		  (iadfa-add-edge! iadfa last-node input new-node)
+		  (when sub-prefix
+		    (when (= 1 (length sub-prefix))
+		      (iadfa-add-edge! iadfa last-node (car sub-prefix) sub-node)
+		      (remove-ancestror-to-childs iadfa last-node))
+		    (setf sub-prefix (cdr sub-prefix)))
 		  (setf last-node new-node)
 		  iadfa))
 	    processing-stem
 	    :initial-value iadfa)
     (iadfa-add-edge! iadfa last-node last-input suffix-node)
     (when (= 1 (length sub-prefix))
-      (iadfa-add-edge! iadfa last-node (car sub-prefix) sub-node))
+      (iadfa-add-edge! iadfa last-node (car sub-prefix) sub-node)
+      (remove-ancestror-to-childs iadfa last-node))
     iadfa))
 
 
