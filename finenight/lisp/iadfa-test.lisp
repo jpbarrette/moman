@@ -17,79 +17,6 @@
 					    "cappend" "cappendice"
 					    "mormont")))
 
-(defmacro test-equivalence (words)
-  (with-syms (w iadfa output)
-    `(let* ((,w ,words)
-            (,iadfa (debug-gen-iadfa ,w))
-	    (,output nil))
-       (setf ,output (extract-words (iadfa-fsa ,iadfa)))
-       (format t "input:~%~S~%output:~%~S~%" ,w ,output)
-       (equal ,w ,output))))
-
-(defun detect-problems (words)
-  (let ((iadfa (build-iadfa))
-	(words-to-be-checked nil))
-    (dolist (word words)
-      (setf words-to-be-checked (nconc words-to-be-checked (list word)))
-      (handle-word iadfa (concatenate 'list word))
-      (when (not (equal words-to-be-checked 
-			(extract-words (iadfa-fsa iadfa))))
-	(return)))
-    ;; We got the first entry that trigger the problem.
-    ;; we need now to see which entry is needed to start
-    ;; the problem
-    words-to-be-checked))
-
-
-(defun detect-first-starting-problematic-word (words-to-be-checked)
-  (let ((wtbc (cdr words-to-be-checked))
-	(last-word (car words-to-be-checked)))
-    (do ((iadfa (gen-iadfa wtbc) (gen-iadfa wtbc)))
-	((null wtbc))
-      (if (equal wtbc
-		 (extract-words (iadfa-fsa iadfa)))
-	  (return (cons last-word wtbc)))
-      (setf last-word (car wtbc))
-      (setf wtbc (cdr wtbc)))))
-
-(defun filter-non-problematic-words (words-to-be-checked)
-  (let ((problematics-words (list (car words-to-be-checked)))
-	(last-word (cadr words-to-be-checked))
-	(words-to-be-checked (cddr words-to-be-checked)))
-    (do ((iadfa (gen-iadfa (append problematics-words words-to-be-checked))
-		(gen-iadfa (append problematics-words words-to-be-checked))))
-	((null words-to-be-checked))
-      (if (equal (append problematics-words words-to-be-checked)
-		 (extract-words (iadfa-fsa iadfa)))
-	  (setf problematics-words (nconc problematics-words (list last-word))))
-      (setf last-word (car words-to-be-checked))
-      (setf words-to-be-checked (cdr words-to-be-checked)))
-    (setf problematics-words (nconc problematics-words (list last-word)))
-    problematics-words))
-	     
-
-(defun detect-problems-from-file (filename)
-  (let ((words-to-be-checked nil))
-    (let ((iadfa (build-iadfa)))
-      (for-each-line-in-file (word filename)
-	(setf words-to-be-checked (nconc words-to-be-checked (list word)))
-	(handle-word iadfa (concatenate 'list word))
-	(when (not (equal words-to-be-checked 
-			  (extract-words (iadfa-fsa iadfa))))
-	  (return))
-	nil))
-    ;; We got the first entry that trigger the problem.
-    ;; we need now to see which entry is needed to start
-    ;; the problem
-    (setf words-to-be-checked 
-	  (detect-first-starting-problematic-word words-to-be-checked))
-    (setf words-to-be-checked
-	  (filter-non-problematic-words words-to-be-checked))
-    words-to-be-checked))
-  
-
-
-(detect-problems-from-file "../../data/com.zone.sorted.small")
       
 (defun iadfa-non-branch-suffix ()
   "This tests that the output of the iadfa isn't screwed up 
@@ -211,7 +138,7 @@ produce a stem shorter than the previous stem.
 		      "0-7-2")))
 
 (org.ancar.CLUnit::deftest "IADFA Test 12"
-    :category "Subsumed previs stems." 
+    :category "Subsumed previouss stems." 
     :test-fn #'iadfa-test12)
 
 (defun iadfa-test13 ()
@@ -226,6 +153,22 @@ stem"
 		      "0-300MPH" 
 		      "0-500"
 		      "0-500MPH")))
+
+(org.ancar.CLUnit::deftest "IADFA Test 13"
+    :category "Subsumed previous stems." 
+    :test-fn #'iadfa-test13)
+
+(defun iadfa-test14 ()
+  "The common suffix was wrongly programmed for previous stem.
+The right behavior is not to consume it, and stop when current-suffix
+is equal to previous-stem."
+  (test-equivalence '("0-APR-CREDITS-CARD" 
+		      "0-APRCREDIT-CARD" 
+		      "0-APRCREDITCARD")))
+
+(org.ancar.CLUnit::deftest "IADFA Test 14"
+    :category "Subsumed previous stems." 
+    :test-fn #'iadfa-test14)
 
 (org.ancar.CLUnit::deftest "IADFA Test 1"
     :category "Destinations" 

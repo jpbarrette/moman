@@ -181,20 +181,22 @@
 (defun c-suffix (iadfa current-suffix node prefix-node profile sub-stem)
   (if (or (= 1 (length current-suffix)) 
 	  (= 1 (length profile)) 
-	  (= 1 (length sub-stem))
+	  ;(= 1 (length sub-stem))
 	  (= (length sub-stem) (length current-suffix)))
       (values node (reverse current-suffix) (reverse profile))
       (let ((next-node (ancestror-transition iadfa node (car current-suffix) (car profile))))
 ;; 	(if (equal '(#\0 #\- #\7) current-suffix)
 ;; 	    (break))
-	(if (or (not next-node) (eq next-node prefix-node) (eq next-node (fsa-start-node (iadfa-fsa iadfa))))
+	(if (or (not next-node) 
+		(eq next-node prefix-node) 
+		(eq next-node (fsa-start-node (iadfa-fsa iadfa))))
 	    (values node (reverse current-suffix) (reverse profile))
 	    (c-suffix iadfa
 		      (cdr current-suffix)
 		      next-node
 		      prefix-node
 		      (cdr profile)
-		      (cdr sub-stem))))))
+		      sub-stem)))))
 
 
 (defun common-suffix  (iadfa current-suffix node prefix-node profile sub-stem)
@@ -306,6 +308,84 @@
 	    (setf last-time current-time)))
       iadfa)
   iadfa))
+
+
+(defmacro test-equivalence (words)
+  (with-syms (w iadfa output)
+    `(let* ((,w ,words)
+            (,iadfa (debug-gen-iadfa ,w))
+	    (,output nil))
+       (setf ,output (extract-words (iadfa-fsa ,iadfa)))
+       (format t "input:~%~S~%output:~%~S~%" ,w ,output)
+       (equal ,w ,output))))
+
+
+(defun detect-problems (words)
+  (let ((iadfa (build-iadfa))
+	(words-to-be-checked nil))
+    (dolist (word words)
+      (setf words-to-be-checked (nconc words-to-be-checked (list word)))
+      (handle-word iadfa (concatenate 'list word))
+      (when (not (equal words-to-be-checked 
+			(extract-words (iadfa-fsa iadfa))))
+	(return)))
+    ;; We got the first entry that trigger the problem.
+    ;; we need now to see which entry is needed to start
+    ;; the problem
+    words-to-be-checked))
+
+
+(defun detect-first-starting-problematic-word (words-to-be-checked)
+  (let ((wtbc (cdr words-to-be-checked))
+	(last-word (car words-to-be-checked)))
+    (do ((iadfa (gen-iadfa wtbc) (gen-iadfa wtbc)))
+	((null wtbc))
+      (if (equal wtbc
+		 (extract-words (iadfa-fsa iadfa)))
+	  (return (cons last-word wtbc)))
+      (setf last-word (car wtbc))
+      (setf wtbc (cdr wtbc)))))
+
+(defun filter-non-problematic-words (words-to-be-checked)
+  (let ((problematics-words (list (car words-to-be-checked)))
+	(last-word (cadr words-to-be-checked))
+	(words-to-be-checked (cddr words-to-be-checked)))
+    (do ((iadfa (gen-iadfa (append problematics-words words-to-be-checked))
+		(gen-iadfa (append problematics-words words-to-be-checked))))
+	((null words-to-be-checked))
+      (if (equal (append problematics-words words-to-be-checked)
+		 (extract-words (iadfa-fsa iadfa)))
+	  (setf problematics-words (nconc problematics-words (list last-word))))
+      (setf last-word (car words-to-be-checked))
+      (setf words-to-be-checked (cdr words-to-be-checked)))
+    (setf problematics-words (nconc problematics-words (list last-word)))
+    problematics-words))
+	     
+
+(defun detect-problems-from-file (filename)
+  (let ((words-to-be-checked nil))
+    (let ((iadfa (build-iadfa)))
+      (for-each-line-in-file (word filename)
+	(setf words-to-be-checked (nconc words-to-be-checked (list word)))
+	(format t "Processing word [~A].~%" word)
+	(handle-word iadfa (concatenate 'list word))
+	(when (not (equal words-to-be-checked 
+			  (extract-words (iadfa-fsa iadfa))))
+	  (format t "Word [~A] triggered a problem.~%" word)
+	  (return))
+	nil))
+    ;; We got the first entry that trigger the problem.
+    ;; we need now to see which entry is needed to start
+    ;; the problem
+    (setf words-to-be-checked 
+	  (detect-first-starting-problematic-word words-to-be-checked))
+    (setf words-to-be-checked
+	  (filter-non-problematic-words words-to-be-checked))
+    words-to-be-checked))
+  
+
+
+
 
 ;; (defun dump-words (iadfa)
 ;;   (let ((fsa (iadfa-fsa))

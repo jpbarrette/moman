@@ -83,4 +83,6 @@
 	   :iadfa-state-ancestrors
 	   :make-fsa-builder-from-fsa
 	   :nadd-edge
-	   :transition))
+	   :transition
+	   :detect-problems-from-file
+	   :test-equivalence))

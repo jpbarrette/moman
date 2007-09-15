@@ -10,6 +10,7 @@
       (dolist (word (extract-words fsa))
 	(format str "~A~%" word)))))
 
+;(detect-problems-from-file "../../data/com.zone.sorted.small")
 (iadfa-run)
 
 
