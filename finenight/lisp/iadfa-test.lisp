@@ -51,6 +51,20 @@
 	  (return (cons last-word wtbc)))
       (setf last-word (car wtbc))
       (setf wtbc (cdr wtbc)))))
+
+(defun filter-non-problematic-words (words-to-be-checked)
+  (let ((problematics-words (list (car words-to-be-checked)))
+	(last-word (cadr words-to-be-checked))
+	(words-to-be-checked (cddr words-to-be-checked)))
+    (do ((iadfa (gen-iadfa (append problematics-words words-to-be-checked))
+		(gen-iadfa (append problematics-words words-to-be-checked))))
+	((null words-to-be-checked))
+      (if (equal (append problematics-words words-to-be-checked)
+		 (extract-words (iadfa-fsa iadfa)))
+	  (setf problematics-words (nconc problematics-words (list last-word))))
+      (setf last-word (car words-to-be-checked))
+      (setf words-to-be-checked (cdr words-to-be-checked)))
+    problematics-words))
 	     
 
 (defun detect-problems-from-file (filename)
@@ -66,7 +80,12 @@
     ;; We got the first entry that trigger the problem.
     ;; we need now to see which entry is needed to start
     ;; the problem
-    (detect-first-starting-problematic-word words-to-be-checked)))
+    (setf words-to-be-checked 
+	  (detect-first-starting-problematic-word words-to-be-checked))
+    (setf words-to-be-checked
+	  (filter-non-problematic-words words-to-be-checked))
+    words-to-be-checked))
+  
 
 
 (detect-problems-from-file "../../data/com.zone.sorted.small")
