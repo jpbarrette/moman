@@ -78,11 +78,12 @@
 	   :build-iadfa
 	   :debug-gen-iadfa
 	   :debug-gen-iadfa-from-file
+	   :detect-problems-from-file
 	   :gen-iadfa-from-file
 	   :iadfa-fsa
 	   :iadfa-state-ancestrors
 	   :make-fsa-builder-from-fsa
 	   :nadd-edge
-	   :transition
-	   :detect-problems-from-file
-	   :test-equivalence))
+	   :print-stats
+	   :test-equivalence
+	   :transition))

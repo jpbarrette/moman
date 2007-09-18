@@ -272,7 +272,6 @@
 	(nb-per-hours 0)
 	(nb-hours-for-all 0))
     (for-each-line-in-file (line file)
-      (format t "~,2F w/h ~,2F Hours ~A ~A ~%"  nb-per-hours nb-hours-for-all index line)
       (handle-word iadfa (concatenate 'list line))
       (when (member index dump)
 	(graphviz-export-to-file (make-fsa-builder-from-fsa (iadfa-fsa iadfa)) (concatenate 'string "output/iadfa" (format nil "~A" index) ".dot"))
@@ -284,7 +283,8 @@
 						      internal-time-units-per-second)) 60 60)))
 	    (setf nb-hours-for-all (float (/ (* 65000 (/ (- current-time last-time) 
 							 internal-time-units-per-second)) 60 60)))
-	    (setf last-time current-time)))
+	    (setf last-time current-time)
+	    (format t "~2,12$ w/h ~2,2$ Hours ~A ~A ~%"  nb-per-hours nb-hours-for-all index line)))
       iadfa)
     iadfa))
 
@@ -383,6 +383,12 @@
 	  (filter-non-problematic-words words-to-be-checked))
     words-to-be-checked))
   
+
+(defun print-stats (iadfa)
+  (format t 
+	  "ancestrors length: ~A~%parent-arities length: ~A~%" 
+	  (length (iadfa-ancestrors iadfa))
+	  (length (iadfa-parent-arities iadfa))))
 
 
 
