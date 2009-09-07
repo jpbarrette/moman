@@ -9,5 +9,6 @@ setup(name='Moman',
       author_email='jpb_NO_SPAM@rrette.com',
       url='http://rrette.com/moman.html',
       packages=['finenight'],
-      scripts=['recognize']
+      package_dir={'finenight': 'finenight/python/'},
+      scripts=['finenight/python/recognize']
       )

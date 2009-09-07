@@ -11,7 +11,7 @@
     ;(dolist (word (extract-words fsa))
 	;(format str "~A~%" word)))))
 
-
+(iadfa-run)
 
 ;(do-symbols (s (find-package :com.rrette.finenight.iadfa)) 
 ;(sb-ext:save-lisp-and-die "iadfa-run" :executable t :toplevel #'iadfa-run)

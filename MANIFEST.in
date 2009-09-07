@@ -1,0 +1,3 @@
+;recursive-include data/ *
+setup.py
+recursive-include finenight/src *

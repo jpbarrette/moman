@@ -4,7 +4,7 @@
 
 ;; the node consists of a label and a map a symbol to 
 ;; a destination object. 
-(defstruct (node (:copier nil))
+(defstruct (hash-node (:copier nil))
   label 
   (symbols-map (make-hash-table :test 'equal))
   (final nil))
