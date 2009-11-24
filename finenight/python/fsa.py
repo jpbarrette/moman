@@ -147,7 +147,7 @@ class Nfa:
         if self.finalStates:
             f.write("node [shape = doublecircle];\n")
             for state in self.finalStates:
-                f.write("\"" + state + "\" ")
+                f.write("\"" + str(state) + "\" ")
             f.write(";\n")
 
         if self.states:
@@ -160,7 +160,7 @@ class Nfa:
             
             for state in self.states.values():
                 for epsilon in state.epsilon:
-                    f.write("\"" + state.name +
+                    f.write("\"" + str(state.name) +
                             "\" -> \"" + 
                             epsilon +
                             "\" [fontname=\"Symbol\", label=\"e\"];\n")
@@ -169,11 +169,11 @@ class Nfa:
                     if transitions.__class__ is not [].__class__:
                         transitions = [transitions]
                     for transition in transitions:
-                        f.write("\"" + state.name +
+                        f.write("\"" + str(state.name) +
                                 "\" -> \"" +
-                                transition +
+                                str(transition) +
                                 "\" [ label = \"" +
-                                symbol +
+                                str(symbol) +
                                 "\" ];\n")
             f.write("}\n")
             f.close()
@@ -262,7 +262,7 @@ class Nfa:
                 for input in invalidInputs:
                     output += input + ", "
                 raise ConstructionError("symbol " + output[:-2] + "in " + \
-                                        state.name + \
+                                        str(state.name) + \
                                         " state is/are not part of the alphabet")
 
 

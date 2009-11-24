@@ -11,12 +11,9 @@ from state import State
 
 
 
-
-
-class FstState:
-    def __init__(self):
-        self.name = None
-        self.transitions = {}
+class FstState(State):
+    def __init__(self, name):
+        State.__init__(self, name)
 
     def __str__(self):
         output = ""
@@ -140,7 +137,7 @@ class Fst(Nfa):
         
         if state.__class__ == Transition:
             if not self.states.has_key(state.start):
-                self.states[state.start] = FstState()
+                self.states[state.start] = FstState(state.start)
             self.states[state.start].add(state)
 
         if state.__class__ == FstState:
