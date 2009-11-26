@@ -2,7 +2,7 @@ import copy
 import pdb
 
 from error import *
-from nameGenerator import IndexNameGenerator
+from nameGenerator import PlainIndexNameGenerator
 from pprint import pprint, pformat
 from state import State
 
@@ -56,12 +56,12 @@ def __rename__(fsa, nameGenerator):
 def rename(nfa, nameGenerator = None):
     """This function will return a FSA with all states renamed
     according to the nameGenerator class. If the nameGenerator
-    is not given, the function will use the IndexNameGenerator
+    is not given, the function will use the PlainIndexNameGenerator
     class.
     """
     
     if nameGenerator is None:
-        nameGenerator = IndexNameGenerator()
+        nameGenerator = PlainIndexNameGenerator()
 
     newNfa = copy.deepcopy(nfa)
     newKeys = __rename__(nfa, nameGenerator)
@@ -97,7 +97,7 @@ def binaryOperationRenaming(lhs, rhs, renameStates, nameGenerator):
     #this is the renaming procedures
     if renameStates is True:
         if nameGenerator is None:
-            nameGenerator = IndexNameGenerator()
+            nameGenerator = PlainIndexNameGenerator()
         newLhs = rename(lhs, nameGenerator)
         newRhs = rename(rhs, nameGenerator)
     elif isNameColliding(lhs, rhs) is True:
