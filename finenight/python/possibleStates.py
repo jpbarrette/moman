@@ -80,45 +80,30 @@ def transition(n, profil, pos):
     i = pos.i
     e = pos.e
     w = len(profil)
-    if 0 <= pos.e and pos.e <= n - 1:
-        if i <= (w - 2):
-            if profil[i] is 1:
-                return [fsc.StandardPosition(i + 1, e)]
-            k = fsc.positiveK(profil[i:min(n - e + 1,
-                                           len(profil) - i)])
-            if k is not None:
-                return [fsc.StandardPosition(i, e + 1),
-                        fsc.StandardPosition(i + 1, e + 1),
-                        fsc.StandardPosition(i + k, e + k - 1)]
-            else:
-                return [fsc.StandardPosition(i, e + 1),
-                        fsc.StandardPosition(i + 1, e + 1)]
-        if i == (w - 1):
-            if profil[i] is 1:
-                return [fsc.StandardPosition(i + 1, e)]
-            else:
-                return [fsc.StandardPosition(i, e + 1),
-                        fsc.StandardPosition(i + 1, e + 1)]
-        if i == w:
-            return [fsc.StandardPosition(i, e + 1)]
-    else:
-        if i <= w - 1:
-            if profil[i] == 1:
-                return [fsc.StandardPosition(i + 1, n)]
-            else:
-                return []
-        if i == w:
-            return []
-    set_trace()
-    return []
+
+    # Return directly if this is a match.
+    if i < w and profil[i] is 1:
+        return [fsc.StandardPosition(i + 1, e)]
+
+    # Basic positions: deletion, subsitution
+    positions = [fsc.StandardPosition(i, e + 1), fsc.StandardPosition(i + 1, e + 1)]
+    # Addition operation:
+    if i < w:
+        k = fsc.positiveK(profil[i:i + min(n - e + 1, len(profil) - i)])
+        if k is not None:
+            positions.append(fsc.StandardPosition(i + k, e + k - 1))
+    # remove positions that goes beyong profil.
+    positions = filter(lambda s: s.i <= w, positions)
+    # remove positions that goes beyong allowed edit mistakes
+    positions = filter(lambda s: s.e <= n, positions)
+    return positions
+
 
 def baseSubword(input, n, i, e):
     k = n - e + 1
     return input[:k]
 
-
 def getNextState(n, profil, state):
-    w = len(profil)
     nState = []
     for pos in state:
         nState += transition(n, profil, pos)
@@ -170,15 +155,12 @@ def getSimilarState(lhs, states):
             if difference != 0:
                 newLhs = map(lambda s: fsc.StandardPosition(s.i - difference, s.e),
                              lhs)
-            if str(state) == str([(2,1), (0,1)]) and \
-                   str(newLhs) == str([(2,1), (3,1)]):
-                set_trace()
             if isStateEqual(newLhs, state):
                 foundState = (state, difference)
         i += 1
 
     if foundState is None:
-        set_trace()
+        raise "Didn't found state"
     return foundState
 
 
