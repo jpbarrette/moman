@@ -1,4 +1,5 @@
 from fsa import *
+from nameGenerator import *
 
 
 class IncrementalAdfa(Dfa):
