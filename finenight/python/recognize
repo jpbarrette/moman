@@ -64,9 +64,9 @@ def debug(output):
 
 
 verbose = False
-config = {"transitionsFile" : "../../data/levenshtein.dat",
-          "iadfaFile": "../../data/iadfa.dat",
-	  "dicoFile": "../../data/test.dico"}
+config = {"transitionsFile" : "levenshtein.dat",
+          "iadfaFile": "iadfa.dat",
+	  "dicoFile": None}
 
 
 
@@ -151,6 +151,11 @@ if __name__ == "__main__":
                   "you should generate config's 'iadfaFile' file."
             sys.exit(2)
     else:
+        if dicoFile is None:
+            print "No dico file specified!"
+            usage()
+            sys.exit(2)
+
         a = generateIADFA(dicoFile, iadfaFile)
 
     if distance is not None:
@@ -175,7 +180,6 @@ if __name__ == "__main__":
             debug("Using Schulz's algoritm")
             from fsc import ErrorTolerantRecognizer
             transitionStates = getTransitionStates(transitionsFile, distance)
-            pprint.pprint(transitionStates)
         else:
             debug("Using Flazer's algorithm")
             from et import ErrorTolerantRecognizer
