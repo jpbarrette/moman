@@ -1,4 +1,5 @@
 import fsc
+import possibleStates
 
 import unittest
 import copy
@@ -37,7 +38,8 @@ class FsaTests(unittest.TestCase):
         for entry in areSubsummed:
             errorMsg = "The entry " + str(entry[0]) + " is supposed to subsume " +\
                        "the entry " + str(entry[1]) + " but it isn't"
-            self.assert_(fsc.isSubsumming(entry[0], entry[1]), msg = errorMsg)
+            self.assert_(fsc.isSubsumming(fsc.StandardPosition(entry[0][0], entry[0][1]), \
+                                          fsc.StandardPosition(entry[1][0], entry[1][1])), msg = errorMsg)
 
 
 
@@ -65,11 +67,12 @@ class FsaTests(unittest.TestCase):
         for entry in areSubsummed:
             errorMsg = "The entry " + str(entry[0]) + " is not supposed to subsume " +\
                        "the entry " + str(entry[1]) + " but it is"
-            self.assert_(not fsc.isSubsumming(entry[0], entry[1]), msg = errorMsg)
+            self.assert_(not fsc.isSubsumming(fsc.StandardPosition(entry[0][0], entry[0][1]), \
+                                              fsc.StandardPosition(entry[1][0], entry[1][1])), msg = errorMsg)
 
 
     def testBetaDelta(self):
-        fsc.genStates(3)
+        possibleStates.getParametricListOfStates(3)
 
 ##    def testComputeLevAuto(self):
 ##        print fsc.computeLevAuto(8,1)
