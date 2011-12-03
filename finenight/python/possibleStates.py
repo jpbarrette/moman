@@ -27,7 +27,7 @@ aren't subsuming the given position.
         f = pos.e - maxHigh
         while f <= pos.e + maxHigh:
             if f >= 0 and f <= n \
-                   and fsc.isSubsumming(basePos, fsc.StandardPosition(j,f)) \
+                   and fsc.isSubsumming(basePos, fsc.StandardPosition(j,f), -1) \
                    and j >= 0:
                 positions.append(fsc.StandardPosition(j,f))
             f += 1

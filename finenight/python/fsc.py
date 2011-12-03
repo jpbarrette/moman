@@ -43,14 +43,33 @@ class TPosition(Position):
 
 
 
-def isSubsumming(subsumming, subsummee):
+def isSubsumming(subsumming, subsummee, n):
     i, e = subsumming.i, subsumming.e
     j, f = subsummee.i, subsummee.e
 
+    # true if i and j are t-positions
+    it = isinstance(subsumming, TPosition)
+    jt = isinstance(subsummee, TPosition)
+
+    # see 7.1.3
+
+    # 1. position i^e subsumes j^f iff e < f and |j-i| <= f - e
     if e < f and (abs(j - i) <= (f - e )):
         return True
-    else:
-        return False
+    
+    # 2. position i^e subsumes jt^f iff f > e and |j-(i-1)| <= f - e
+    if not it and jt and f > e and (abs(j - (i - 1)) <= (f - e)):
+        return True
+
+    # 3. position it^e subsumes j^f iff n = f > e and i = j
+    if it and jt and n == f and f > e and i == j:
+        return True 
+
+    # 4. position it^e subsumes jt^f iff f > e and i = j
+    if it and jt and f > e and i == j:
+        return True
+
+    return False
 
 
 
@@ -75,7 +94,7 @@ def reduce(m):
                         j = n[f][jIndex][0]
                         if n[f][jIndex][1] is False:
                             if isSubsumming(StandardPosition(i,e),
-                                            StandardPosition(j,f)):
+                                            StandardPosition(j,f), -1):
                                 n[f][jIndex] = (j, True)
         n[e] = filter(lambda j: not j[1], n[e])
     union = []
