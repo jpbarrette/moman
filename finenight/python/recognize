@@ -81,16 +81,17 @@ def getTransitionStates(filename, distance):
     except:
         pass
 
-    if transitions.has_key(str(distance)) is False:
+    distanceStr = str(distance)
+    if transitions.has_key(distanceStr) is False:
         debug("Creating the dynamic levenshtein transitions")
-        transitions[str(distance)] = genTransitions(distance)
+        transitions[distanceStr] = genTransitions(distance)
         try:
             pickle.dump(transitions,open(filename, "w"))
             debug("The transitions are dumped.")
         except IOError, e:
             debug("Was unable to save the generated transitions: " + str(e))
 
-    return transitions[str(distance)]
+    return transitions[distanceStr]
             
 
 

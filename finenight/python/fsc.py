@@ -4,43 +4,54 @@ import pdb
 
 
 class Position:
-    def __init__(self, i, e):
+    def __init__(self, i, e, isTransposition):
+        self.isTransposition = isTransposition
         self.i = i
         self.e = e
         
     def __str__(self):
-        return str((self.i, self.e))
+        val = str((self.i, self.e))
+        if self.isTransposition:
+            val = 't' + val
+        return val
 
     def __repr__(self):
         return str(self)
 
     def __eq__(lhs, rhs):
         return lhs.i == rhs.i and \
-               lhs.e == lhs.e
+               lhs.e == rhs.e and \
+               lhs.isTransposition == rhs.isTransposition
 
     def __lt__(lhs, rhs):
         if lhs.i < rhs.i:
             return True
 
-        if lhs.i == rhs.i:
-            if lhs.e < rhs.e:
-                return True
-            else:
-                return False
+        if lhs.i >= rhs.i:
+            return False
+
+        # consider a standard position as lower than a transposition position
+        if not lhs.isTransposition and rhs.isTransposition:
+            return True
+        
+        if lhs.isTransposition != rhs.isTransposition:
+            return False
+
+        if lhs.e < rhs.e:
+            return True
+
+        if lhs.e > rhs.e:
+            return False
+
 
         return False
-    
 
-class StandardPosition(Position):
-    pass
 
-class TPosition(Position):
-    def __str__(self):
-        return 't' + str((self.i, self.e))
+def StandardPosition(i, e):
+    return Position(i, e, False)
 
-    def __repr__(self):
-        return str(self)
-
+def TPosition(i, e):
+    return Position(i, e, True)
 
 
 def isSubsumming(subsumming, subsummee, n):
@@ -48,8 +59,8 @@ def isSubsumming(subsumming, subsummee, n):
     j, f = subsummee.i, subsummee.e
 
     # true if i and j are t-positions
-    it = isinstance(subsumming, TPosition)
-    jt = isinstance(subsummee, TPosition)
+    it = subsumming.isTransposition
+    jt = subsummee.isTransposition
 
     # see 7.1.3
 
@@ -74,33 +85,34 @@ def isSubsumming(subsumming, subsummee, n):
 
 
 
-def reduce(m):
-    n = {}
-    for entry in m:
-        l = n.setdefault(entry.e, [])
-        item = (entry.i, False)
+def reduce(M, n):
+    items = {}
+    for entry in M:
+        l = items.setdefault(entry.e, [])
+        item = [entry, False]
         if item not in l:
             l.append(item)
 
-    keys = n.keys()
+    keys = items.keys()
     keys.sort()
     for eIndex in range(len(keys)):
         e = keys[eIndex]
-        for i in n[e]:
-            if i[1] is False:
-                i = i[0]
+        for item in items[e]:
+            if item[1] is False:
+                pos = item[0]
                 for f in keys[eIndex + 1:]:
-                    for jIndex in range(len(n[f])):
-                        j = n[f][jIndex][0]
-                        if n[f][jIndex][1] is False:
-                            if isSubsumming(StandardPosition(i,e),
-                                            StandardPosition(j,f), -1):
-                                n[f][jIndex] = (j, True)
-        n[e] = filter(lambda j: not j[1], n[e])
+                    for jIndex in range(len(items[f])):
+                        otherItem = items[f][jIndex]
+                        if otherItem[1] is False:
+                            otherPos = otherItem[0]
+                            if isSubsumming(pos, otherPos, n):
+                                otherItem[1] = True
+        items[e] = filter(lambda j: not j[1], items[e])
     union = []
-    for key in n:
-        for item in n[key]:
-            union.append(StandardPosition(item[0], key))
+    for key in items:
+        for item in items[key]:
+            union.append(item[0])
+    union.sort()
             
     return union
 
@@ -156,13 +168,13 @@ def transition(input, x, n, i, e):
     
             
 
-def union(M, N):
+def union(M, N, n):
     if type(M) is not types.ListType:
         M = [M]
     if type(N) is not types.ListType:
         N = [N]
 
-    return reduce(M + N)
+    return reduce(M + N, n)
 
 
 def profil( inputWord ):
@@ -251,8 +263,6 @@ def final(n, state, index, wordLen):
             isFinal = True
         j += 1
     return isFinal
-    return False
-
 
     
 class ErrorTolerantRecognizer:
@@ -271,6 +281,8 @@ class ErrorTolerantRecognizer:
             (V, q, M) = states.pop()
             for (x, q1) in fsa.states[q].transitions.items():
                 mPrime = delta( self.n, M, x, word[M[1]:], self.transitionsStates )
+                if not mPrime:
+                    pdb.set_trace()
                 if mPrime[0] != []:
                     V1 = V + x
                     states.append((V1, q1, mPrime))
