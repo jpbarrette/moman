@@ -63,29 +63,34 @@ def isSubsumming(subsumming, subsummee, n):
     jt = subsummee.isTransposition
 
     # see 7.1.3
-
-    # 1. position i^e subsumes j^f iff e < f and |j-i| <= f - e
-    if e < f and (abs(j - i) <= (f - e )):
-        return True
-    
-    # 2. position i^e subsumes jt^f iff f > e and |j-(i-1)| <= f - e
-    if not it and jt and f > e and (abs(j - (i - 1)) <= (f - e)):
-        return True
-
-    # 3. position it^e subsumes j^f iff n = f > e and i = j
-    if it and jt and n == f and f > e and i == j:
-        return True 
-
-    # 4. position it^e subsumes jt^f iff f > e and i = j
-    if it and jt and f > e and i == j:
-        return True
-
+    if it:
+        if jt:
+            # 4. position it^e subsumes jt^f iff f > e and i = j
+            if it and jt and f > e and i == j:
+                return True
+        else:
+            # 3. position it^e subsumes j^f iff n = f > e and i = j
+            if n == f and f > e and i == j:
+                return True 
+            
+    else:
+        if jt:
+            # 2. position i^e subsumes jt^f iff f > e and |j-(i-1)| <= f - e
+            if f > e and (abs(j - (i - 1)) <= (f - e)):
+                return True
+        else:
+            # 1. position i^e subsumes j^f iff e < f and |j-i| <= f - e
+            if e < f and (abs(j - i) <= (f - e )):
+                return True
+        
     return False
 
 
 
-
 def reduce(M, n):
+    # Process entries by number of errors.
+    # This is because a entry can only be subsumed
+    # by entries with less errors.
     items = {}
     for entry in M:
         l = items.setdefault(entry.e, [])
@@ -132,41 +137,6 @@ def positiveK(cString):
     else:
         return i + 1
 
-
-def transition(input, x, n, i, e):
-    w = len(input)
-    inputSubword = subword(input, n, i, e)
-    cString = characterizedVector(x, inputSubword)
-    if 0 <= e and e <= n - 1:
-        if i <= (w - 2):
-            if cString[0] is 1:
-                return [(i + 1, e)]
-            k = positiveK(cString)
-            if k is not None:
-                return [(i, e + 1),
-                        (i + 1, e + 1),
-                        (i + k, e + k - 1)]
-            else:
-                return [(i, e + 1),
-                        (i + 1, e + 1)]
-        if i == (w - 1):
-            if cString[0] is 1:
-                return [(i + 1, e)]
-            else:
-                return [(i, e + 1), (i + 1, e + 1)]
-        if i == w:
-            return [(i, e + 1)]
-    else:
-        if i <= w - 1:
-            if cString[0] == 1:
-                return [(i + 1, n)]
-            else:
-                return []
-        if i == w:
-            return []
-
-    
-            
 
 def union(M, N, n):
     if type(M) is not types.ListType:
@@ -281,8 +251,6 @@ class ErrorTolerantRecognizer:
             (V, q, M) = states.pop()
             for (x, q1) in fsa.states[q].transitions.items():
                 mPrime = delta( self.n, M, x, word[M[1]:], self.transitionsStates )
-                if not mPrime:
-                    pdb.set_trace()
                 if mPrime[0] != []:
                     V1 = V + x
                     states.append((V1, q1, mPrime))

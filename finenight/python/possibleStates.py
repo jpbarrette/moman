@@ -142,7 +142,7 @@ def genTransitions(n, withTransitions = True):
 
 
 if __name__ == "__main__":
-    pprint([genTransitions(1)])
+    pprint([genTransitions(2)])
         
 
 
