@@ -22,7 +22,7 @@ Mostly, the only part of the tools suite which is worthwhile mentioning is the "
 * Minimization algorithm
 * Construction of an IADFA from a sorted dictionary
 * Graphviz support
-* Error-Tolerant IADFA (starred in Michael McCandless's Mike MChttp://blog.mikemccandless.com/2011/03/lucenes-fuzzyquery-is-100-times-faster.html
+* Error-Tolerant IADFA (starred in Michael McCandless's [article](http://blog.mikemccandless.com/2011/03/lucenes-fuzzyquery-is-100-times-faster.html)
 
 Almost all algorithms were taken from the book [Introduction to Automata Theory, Languages, and Computation](#hopcroft01). The minimization algorithm is an implementation of [Brzozowski's method](#brzozowski). In this method, the (possibly non-deterministic) automaton is reversed, determinized, reversed and determinized. I'll eventually add the [Hopcroft's nlog(n) minimization algorithm](#hopcroft).
 
