@@ -34,20 +34,22 @@
 <h2>
 <a id="description" class="anchor" href="#description" aria-hidden="true"><span class="octicon octicon-link"></span></a>Description</h2>
 
-<p>This is will eventually be a suite of tools to be used by an orthographic/grammatical checker and the checker itself. The tools are currently coded in Python, but I began to rewrite it in Lisp. Moman, the suite itself, will be consisted of the following tools:</p>
+<p>This was supposed to be a suite of tools to be used by an orthographic/grammatical checker and the checker itself. However, the project is mainly dead right now. But I encourage you to look through the code and use it as inspiration/reference. The tools are currently coded in Python, but I started a while back to rewrite it in Lisp (which will never be finished). Moman, the suite itself, consist of the following tools:</p>
 
 <ul>
 <li>
-<em>FineNight</em> is the FSA library.</li>
+<a href="#finenight">FineNight</a> is the FSA library.</li>
 <li>A FST library. (Not yet implemented)</li>
 <li>
-<em>ZSpell</em> is the orthographic checker.</li>
+<a href="#zspell">ZSpell</a> is the orthographic checker.</li>
 </ul>
+
+<p>Mostly, the only part of the tools suite which is worthwhile mentioning is the "Fast String Correction" which is used by <a href="https://lucene.apache.org/">Lucene's</a> FuzzyQuery. You can read about the inclusion of this project in Lucene by reading Michael McCandless's <a href="http://blog.mikemccandless.com/2011/03/lucenes-fuzzyquery-is-100-times-faster.html">article</a>.</p>
 
 <h2>
 <a id="finenight" class="anchor" href="#finenight" aria-hidden="true"><span class="octicon octicon-link"></span></a>FineNight</h2>
 
-<p>The <em>FineNight</em> library contains many algorithms for Finite State Automatons. That includes:</p>
+<p><a name="finenight"></a>The <em>FineNight</em> library contains many algorithms for Finite State Automatons. That includes:</p>
 
 <ul>
 <li>Union of two FSAs</li>
@@ -62,12 +64,76 @@
 <li>Minimization algorithm</li>
 <li>Construction of an IADFA from a sorted dictionary</li>
 <li>Graphviz support</li>
-<li>Error-Tolerant IADFA
-Almost all algorithms were taken from the book [Introduction to Automata Theory, Languages, and Computation] [1]. The minimization algorithm is an implementation of Brzozowski's method [<a href="#brzozowski">2</a>]. In this method, the (possibly non-deterministic) automaton is reversed, determinized, reversed and determinized. I'll eventually add the Hopcroft's nlog(n) minimization algorithm [<a href="#hopcroft">3</a>]</li>
+<li>Error-Tolerant IADFA (starred in Michael McCandless's Mike MChttp://blog.mikemccandless.com/2011/03/lucenes-fuzzyquery-is-100-times-faster.html</li>
 </ul>
 
-<p>[1]: <a href="http://www.cs.cornell.edu/Info/Department/Annual95/Faculty/Hopcroft.html">John E. Hopcroft</a>, <a href="http://theory.stanford.edu/~rajeev/">Rajeev Motwani</a> and
-          <a href="http://www-db.stanford.edu/~ullman/">Jefferey D. Ullman</a>, <a href="http://www-db.stanford.edu/~ullman/ialc.html">Introduction to Automata Theory, Languages and Computation</a>, 2nd edition, Adison-Wesley, 2001.</p>
+<p>Almost all algorithms were taken from the book <a href="#hopcroft01">Introduction to Automata Theory, Languages, and Computation</a>. The minimization algorithm is an implementation of <a href="#brzozowski">Brzozowski's method</a>. In this method, the (possibly non-deterministic) automaton is reversed, determinized, reversed and determinized. I'll eventually add the <a href="#hopcroft">Hopcroft's nlog(n) minimization algorithm</a>.</p>
+
+<h2>
+<a id="zspell" class="anchor" href="#zspell" aria-hidden="true"><span class="octicon octicon-link"></span></a>ZSpell</h2>
+
+<p><a name="zspell"></a><i>ZSpell</i> is meant to be a concurrent of <a href="http://aspell.sourceforge.net/">aspell</a>, made by Kevin Atkinson. At this time, <i>ZSpell</i> can suggest words with a Levenshtein-distance of one. Before we were using <a href="#oflazer96errortolerant">Kemal Oflazer's algorithm</a>. This algorithm is very slow, but now we use a faster algorithm (<a href="#schulz02fast">Schulz's and Mihov's algorithm</a>). However, only substitution, removal and insertion are used for the faster algorithm. It means that transpositions errors, like "ehllo" -&gt; "hello", are considered as two operations. </p>
+
+<p>TODOs includes:</p>
+
+<ul>
+<li>Add transposition errors for Levenshtein-distance algorithm.</li>
+<li>Add phonetic errors (spelling by sound).</li>
+<li>Add derivation errors.</li>
+</ul>
+
+<h2>
+<a id="references" class="anchor" href="#references" aria-hidden="true"><span class="octicon octicon-link"></span></a>References</h2>
+
+<ul>
+<li>
+<a name="hopcroft01"></a><a href="http://www.cs.cornell.edu/Info/Department/Annual95/Faculty/Hopcroft.html">John E. Hopcroft</a>, <a href="http://theory.stanford.edu/~rajeev/">Rajeev Motwani</a> and <a href="http://www-db.stanford.edu/~ullman/">Jefferey D. Ullman</a>, <i><a href="http://www-db.stanford.edu/~ullman/ialc.html">Introduction to Automata Theory, Languages and Computation</a></i>, 2nd edition, Adison-Wesley, 2001.</li>
+<li>
+<a name="brzozowski"></a><a href="http://maveric.uwaterloo.ca/~brzozo/">J. A. Brzozowski</a>,
+      <i>Canonical regular expressions and minimal state graphs for definite events</i>, 
+      in Mathematical Theory of Automata, Volume 12 of MRI Symposia Series, 
+      pp. 529-561,      Polytechnic Press, Polytechnic Institute of Brooklyn, N.Y.,
+      1962.</li>
+<li>
+<a name="hopcroft"></a> <a href="http://www.cs.cornell.edu/Info/Department/Annual95/Faculty/Hopcroft.html">
+    John E. Hopcroft
+      </a>, 
+      <a href="http://historical.ncstrl.org/litesite-data/stan/CS-TR-71-190.pdf">
+    <i>An n log n algorithm for minimizing the states in a finite automaton</i>
+      </a>, 
+      in The Theory of Machines and Computations, Z. Kohavi (ed.), pp. 189-196, 
+      Academic Press, 1971.</li>
+<li>
+<a name="oflazer96errortolerant"></a>
+      <a href="http://www.nlp.cs.bilkent.edu.tr/~ko/">Kemal Oflazer</a>,
+      <a href="http://citeseer.ist.psu.edu/oflazer96errortolerant.html">
+    <i>Error-tolerant Finite State Recognition with Applications to 
+      Morphological Analysis and Spelling Correction</i>
+      </a>,
+      Computational Linguistics, 22(1), pp. 73--89, March, 1996.</li>
+<li>
+<a name="schulz02fast"></a>
+      <a href="http://www.cis.uni-muenchen.de/people/schulz.html">
+    Klaus U. Schulz
+      </a> and 
+      <a href="http://lml.bas.bg/~stoyan/">Stoyan Mihov</a>,
+    <a href="http://citeseer.ist.psu.edu/schulz02fast.html">
+      <i>Fast String Correction with Levenshtein-Automata</i>,
+    </a>
+    International Journal of Document Analysis and Recognition, 5(1):67--85, 2002.</li>
+<li>
+<a name="czech92optimal"></a>
+      <a href="http://sun.iinf.polsl.gliwice.pl/~zjc/">
+    Zbigniew J. Czech
+      </a>,
+      <a href="http://www.itee.uq.edu.au/~havas/">
+    George Havas
+      </a> and 
+      Bohdan S. Majewski,
+      <a href="http://citeseer.ist.psu.edu/czech92optimal.html">
+    <i>An Optimal Algorithm for Generating Minimal Perfect Hash Functions</i>
+      </a>, Information Processing Letters, 43(5):257--264, 1992.</li>
+</ul>
       </section>
       <footer>
         <p>This project is maintained by <a href="https://github.com/jpbarrette">jpbarrette</a></p>
