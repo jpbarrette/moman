@@ -1,0 +1,80 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <title>Moman by jpbarrette</title>
+
+    <link rel="stylesheet" href="stylesheets/styles.css">
+    <link rel="stylesheet" href="stylesheets/pygment_trac.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+    <!--[if lt IE 9]>
+    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+  </head>
+  <body>
+    <div class="wrapper">
+      <header>
+        <h1>Moman</h1>
+        <p></p>
+
+        <p class="view"><a href="https://github.com/jpbarrette/moman">View the Project on GitHub <small>jpbarrette/moman</small></a></p>
+
+
+        <ul>
+          <li><a href="https://github.com/jpbarrette/moman/zipball/master">Download <strong>ZIP File</strong></a></li>
+          <li><a href="https://github.com/jpbarrette/moman/tarball/master">Download <strong>TAR Ball</strong></a></li>
+          <li><a href="https://github.com/jpbarrette/moman">View On <strong>GitHub</strong></a></li>
+        </ul>
+      </header>
+      <section>
+        <h1>
+<a id="moman" class="anchor" href="#moman" aria-hidden="true"><span class="octicon octicon-link"></span></a>Moman</h1>
+
+<h2>
+<a id="description" class="anchor" href="#description" aria-hidden="true"><span class="octicon octicon-link"></span></a>Description</h2>
+
+<p>This is will eventually be a suite of tools to be used by an orthographic/grammatical checker and the checker itself. The tools are currently coded in Python, but I began to rewrite it in Lisp. Moman, the suite itself, will be consisted of the following tools:</p>
+
+<ul>
+<li>
+<em>FineNight</em> is the FSA library.</li>
+<li>A FST library. (Not yet implemented)</li>
+<li>
+<em>ZSpell</em> is the orthographic checker.</li>
+</ul>
+
+<h2>
+<a id="finenight" class="anchor" href="#finenight" aria-hidden="true"><span class="octicon octicon-link"></span></a>FineNight</h2>
+
+<p>The <em>FineNight</em> library contains many algorithms for Finite State Automatons. That includes:</p>
+
+<ul>
+<li>Union of two FSAs</li>
+<li>Intersection of two FSAs</li>
+<li>Complement of a FSAs</li>
+<li>Difference of two FSAs</li>
+<li>Reversal of a FSA</li>
+<li>Closure of a FSA</li>
+<li>Concatenation of two FSAs</li>
+<li>Determination of a NFA</li>
+<li>Equivalence test</li>
+<li>Minimization algorithm</li>
+<li>Construction of an IADFA from a sorted dictionary</li>
+<li>Graphviz support</li>
+<li>Error-Tolerant IADFA
+Almost all algorithms were taken from the book <em>Introduction to Automata Theory, Languages, and Computation</em> [hopcroft01]. The minimization algorithm is an implementation of Brzozowski's method [<a href="#brzozowski">2</a>]. In this method, the (possibly non-deterministic) automaton is reversed, determinized, reversed and determinized. I'll eventually add the Hopcroft's nlog(n) minimization algorithm [<a href="#hopcroft">3</a>]</li>
+</ul>
+
+<p><a href="http://www.cs.cornell.edu/Info/Department/Annual95/Faculty/Hopcroft.html">John E. Hopcroft</a>, <a href="http://theory.stanford.edu/~rajeev/">Rajeev Motwani</a> and
+          <a href="http://www-db.stanford.edu/~ullman/">Jefferey D. Ullman</a>, <a href="http://www-db.stanford.edu/~ullman/ialc.html">Introduction to Automata Theory, Languages and Computation</a>, 2nd edition, Adison-Wesley, 2001.</p>
+      </section>
+      <footer>
+        <p>This project is maintained by <a href="https://github.com/jpbarrette">jpbarrette</a></p>
+        <p><small>Hosted on GitHub Pages &mdash; Theme by <a href="https://github.com/orderedlist">orderedlist</a></small></p>
+      </footer>
+    </div>
+    <script src="javascripts/scale.fix.js"></script>
+    
+  </body>
+</html>
