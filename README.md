@@ -21,7 +21,7 @@ The *FineNight* library contains many algorithms for Finite State Automatons. Th
 * Graphviz support
 * Error-Tolerant IADFA
 
-Almost all algorithms were taken from the book *Introduction to Automata Theory, Languages, and Computation* [hopcroft01]. The minimization algorithm is an implementation of Brzozowski's method [<a href="#brzozowski">2</a>]. In this method, the (possibly non-deterministic) automaton is reversed, determinized, reversed and determinized. I'll eventually add the Hopcroft's nlog(n) minimization algorithm [<a href="#hopcroft">3</a>]
+Almost all algorithms were taken from the book [Introduction to Automata Theory, Languages, and Computation][1]. The minimization algorithm is an implementation of Brzozowski's method [<a href="#brzozowski">2</a>]. In this method, the (possibly non-deterministic) automaton is reversed, determinized, reversed and determinized. I'll eventually add the Hopcroft's nlog(n) minimization algorithm [<a href="#hopcroft">3</a>]
 
-[John E. Hopcroft](http://www.cs.cornell.edu/Info/Department/Annual95/Faculty/Hopcroft.html), <a href="http://theory.stanford.edu/~rajeev/">Rajeev Motwani</a> and
+[1]: [John E. Hopcroft](http://www.cs.cornell.edu/Info/Department/Annual95/Faculty/Hopcroft.html), <a href="http://theory.stanford.edu/~rajeev/">Rajeev Motwani</a> and
 	      <a href="http://www-db.stanford.edu/~ullman/">Jefferey D. Ullman</a>, <a href="http://www-db.stanford.edu/~ullman/ialc.html">Introduction to Automata Theory, Languages and Computation</a>, 2nd edition, Adison-Wesley, 2001.
