@@ -1,6 +1,7 @@
 import copy
 import types
 import pdb
+from functools import reduce
 
 
 class Position:
@@ -98,7 +99,7 @@ def reduce(M, n):
         if item not in l:
             l.append(item)
 
-    keys = items.keys()
+    keys = list(items.keys())
     keys.sort()
     for eIndex in range(len(keys)):
         e = keys[eIndex]
@@ -112,7 +113,7 @@ def reduce(M, n):
                             otherPos = otherItem[0]
                             if isSubsumming(pos, otherPos, n):
                                 otherItem[1] = True
-        items[e] = filter(lambda j: not j[1], items[e])
+        items[e] = [j for j in items[e] if not j[1]]
     union = []
     for key in items:
         for item in items[key]:
@@ -139,9 +140,9 @@ def positiveK(cString):
 
 
 def union(M, N, n):
-    if type(M) is not types.ListType:
+    if type(M) is not list:
         M = [M]
-    if type(N) is not types.ListType:
+    if type(N) is not list:
         N = [N]
 
     return reduce(M + N, n)
@@ -209,14 +210,15 @@ def isLikeStates(state, lowerStates):
     return isLike
     
 
-def delta( n, (stateType, index), character, input, states ):
+def delta( n, stateTypeAndIndex, character, input, states ):
+    (stateType, index) = stateTypeAndIndex
     cv = characterizedVector( character, input )[:(2 * n + 1)]
     l = len(cv)
     w = states[l]
     cv = str(cv)
 
     state = None
-    if w.has_key(cv) and w[cv].has_key(str(stateType)):
+    if cv in w and str(stateType) in w[cv]:
         state = w[cv][str(stateType)]
         state = (state[0], state[1] + index)
     return state
@@ -249,7 +251,7 @@ class ErrorTolerantRecognizer:
         states = [("", fsa.startState, (str([(0,0)]), 0))]
         while len(states):
             (V, q, M) = states.pop()
-            for (x, q1) in fsa.states[q].transitions.items():
+            for (x, q1) in list(fsa.states[q].transitions.items()):
                 mPrime = delta( self.n, M, x, word[M[1]:], self.transitionsStates )
                 if mPrime[0] != []:
                     V1 = V + x

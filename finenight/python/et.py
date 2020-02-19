@@ -71,7 +71,7 @@ class ErrorTolerantRecognizer:
         while len(states):
             (Yp, qi) = states.pop()
             qi = fsa.states[qi]
-            for (qj,a) in map(lambda (a,s): (s,a), qi.transitions.items()):
+            for (qj,a) in [(a_s[1],a_s[0]) for a_s in list(qi.transitions.items())]:
                 Y = Yp + a
                 if cuted(word, Y, t) <= t:
                     states.append((Y,qj))

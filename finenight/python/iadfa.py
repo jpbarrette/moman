@@ -29,7 +29,7 @@ class IncrementalAdfa(Dfa):
         while nextStateName is not None:
             symbol = word[index]
             stateName = nextStateName
-            if self.states[stateName].transitions.has_key(symbol):
+            if symbol in self.states[stateName].transitions:
                 nextStateName = self.states[stateName].transitions[symbol]
                 index += 1
             else:
@@ -42,7 +42,7 @@ class IncrementalAdfa(Dfa):
 
     def hasChildren(self, stateName):
         okay = False
-        if filter(lambda s: s, self.states[stateName].transitions.values()):
+        if [s for s in list(self.states[stateName].transitions.values()) if s]:
             okay = True
 
         return okay
@@ -64,7 +64,7 @@ class IncrementalAdfa(Dfa):
 
 
     def markedAsRegistered(self, stateName):
-        return self.register.has_key(stateName)
+        return stateName in self.register
 
 
     def markAsRegistered(self, stateName):
@@ -77,7 +77,7 @@ class IncrementalAdfa(Dfa):
     def equivalentRegisteredState(self, stateName):
         equivatentState = None
         
-        for state in self.register.keys():
+        for state in list(self.register.keys()):
             if self.areEquivalents(state, stateName):
                 equivatentState = state
 
@@ -85,7 +85,7 @@ class IncrementalAdfa(Dfa):
             
 
     def lastChild(self, stateName):
-        input = self.states[stateName].transitions.keys()
+        input = list(self.states[stateName].transitions.keys())
         input.sort()
         return (self.states[stateName].transitions[input[-1]], input[-1])
         
@@ -109,7 +109,7 @@ class IncrementalAdfa(Dfa):
         while len(childs) > 0:
             nextChilds = []
             for child in childs:
-                nextChilds += filter(lambda s: not self.markedAsRegistered(s), self.states[child].transitions.values())
+                nextChilds += [s for s in list(self.states[child].transitions.values()) if not self.markedAsRegistered(s)]
                 self.states.pop(child)
                 if child in self.finalStates:
                     self.finalStates.remove(child)

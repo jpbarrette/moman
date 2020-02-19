@@ -11,12 +11,11 @@ class DfaState:
         raise NotImplemented()
         self.name = state.name
 
-        if filter(lambda s: len(s) > 1, state.transitions.keys()):
+        if [s for s in list(state.transitions.keys()) if len(s) > 1]:
             raise StateError("A DFA transition is containing more than " + \
                              "one state for a symbol")
 
-        self.transitions = dict(map(lambda k: (k, state.transitions[k][0]),
-                               state.transitions.keys()))
+        self.transitions = dict([(k, state.transitions[k][0]) for k in list(state.transitions.keys())])
         
 
 
@@ -66,7 +65,7 @@ class State(DfaState):
             
         self.transitions = transitions
 
-        for key in self.transitions.keys():
+        for key in list(self.transitions.keys()):
             if type(self.transitions[key]) != type([]):
                 self.transitions = copy.copy(self.transitions)
                 self.transitions[key] = [self.transitions[key]]

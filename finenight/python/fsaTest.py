@@ -64,8 +64,8 @@ class FsaTests(unittest.TestCase):
                                      (["dc?", "cdcc?", "dccc??", "dccc?c"], {'nfa' : self.nfa2, 'dfa' : self.dfa2})]
         self.alphabetErrorTapes = [(["cbaaa!", "bcaaa!", "baaac!", "baaa!c"], {'nfa' : self.nfa, 'dfa' : self.dfa}),
                                    (["adccc?", "daccc?", "dccca?", "dccc?a"], {'nfa' : self.nfa2, 'dfa' : self.dfa2})]
-        f = lambda t: map(lambda tapeA, tapeB: tapeA + tapeB, t[0], t[1])
-        self.concatenationTapes = f(map(lambda tapes: tapes[0], self.recognizableTapes))
+        f = lambda t: list(map(lambda tapeA, tapeB: tapeA + tapeB, t[0], t[1]))
+        self.concatenationTapes = f([tapes[0] for tapes in self.recognizableTapes])
 
 
     def testTransition(self):
@@ -94,12 +94,12 @@ class FsaTests(unittest.TestCase):
                  ([q2], "d", [q0, q1, q3]),
                  ([q3], "d", [])]
         for s in tests:
-            states = map(lambda s: nfa.states[s.name], s[0])
+            states = [nfa.states[s.name] for s in s[0]]
 
             result = nfa.transition(states, s[1])
-            result = map(lambda s: s.name, result)
+            result = [s.name for s in result]
             result.sort()
-            expectedResult = map(lambda s: s.name, s[2])
+            expectedResult = [s.name for s in s[2]]
             expectedResult.sort()
 
             errorMsg = "Transition(" + \
@@ -108,7 +108,7 @@ class FsaTests(unittest.TestCase):
                        str(nfa.transition(states, s[1])) + " != " + \
                        str(s[2])
 
-            self.assert_(result == expectedResult, msg = errorMsg)
+            self.assertTrue(result == expectedResult, msg = errorMsg)
 
 
         
@@ -125,7 +125,7 @@ class FsaTests(unittest.TestCase):
                        "for the nfa:\n" + str(nfa) + \
                        "concatened from nfa:\n " + str(self.nfa) + \
                        "and the kleenee of:\n" + str(self.nfa2)
-            self.assert_(nfa.recognize(tape), msg = errorMsg)
+            self.assertTrue(nfa.recognize(tape), msg = errorMsg)
 
 
     def testNfaConcatenation(self):
@@ -136,7 +136,7 @@ class FsaTests(unittest.TestCase):
                        "for the nfa:\n" + str(nfa) + \
                        "concatened from nfa:\n" + str(self.nfa) + \
                        "and:\n" + str(self.nfa2)
-            self.assert_(nfa.recognize(tape), msg = errorMsg)
+            self.assertTrue(nfa.recognize(tape), msg = errorMsg)
 
 
 
@@ -146,7 +146,7 @@ class FsaTests(unittest.TestCase):
                    "langage that the original FSA was recognizing.\n" \
                    "original:\n" + str(self.nfa) + \
                    "renamed:\n" + str(nfa)
-        self.assert_(nfa.recognize("baaa!"), msg = errorMsg)
+        self.assertTrue(nfa.recognize("baaa!"), msg = errorMsg)
 
 
 
@@ -159,7 +159,7 @@ class FsaTests(unittest.TestCase):
                        "for the nfa:\n" + str(nfa) + \
                        "that is an union from nfa:\n " + str(self.nfa) + \
                        "and:\n" + str(self.nfa2)
-            self.assert_(nfa.recognize(tape), msg = errorMsg)
+            self.assertTrue(nfa.recognize(tape), msg = errorMsg)
 
 
 
@@ -170,7 +170,7 @@ class FsaTests(unittest.TestCase):
         errorMsg = "The nfa used in the union operation is not the same as before.\n" + \
                    "original:\n" + str(self.nfa) + \
                    "current:\n" + str(nfaCopy)
-        self.assert_(self.nfa == nfaCopy, msg = errorMsg)
+        self.assertTrue(self.nfa == nfaCopy, msg = errorMsg)
 
 
 
@@ -181,7 +181,7 @@ class FsaTests(unittest.TestCase):
         errorMsg = "The nfa used in the concatened operation is not the same as before.\n" + \
                    "original:\n" + str(self.nfa) + \
                    "current:\n" + str(nfaCopy)
-        self.assert_(self.nfa == nfaCopy, msg = errorMsg)
+        self.assertTrue(self.nfa == nfaCopy, msg = errorMsg)
 
 
     def testEqualityOfNfaWhenNfaIsDuplicated(self):
@@ -189,7 +189,7 @@ class FsaTests(unittest.TestCase):
         errorMsg = "The copy of a nfa seem to not be equal to the original nfa.\n" \
                    "original:\n" + str(self.nfa) + \
                    "current:\n" + str(nfaCopy)
-        self.assert_(self.nfa == nfaCopy, msg = errorMsg)
+        self.assertTrue(self.nfa == nfaCopy, msg = errorMsg)
 
 
 
@@ -199,14 +199,14 @@ class FsaTests(unittest.TestCase):
                    "equal to the original nfa's start state.\n" \
                    "original:\n" + str(self.nfa.startState) + \
                    "current:\n" + str(nfaCopy.startState)
-        self.assert_(self.nfa.startState == nfaCopy.startState,
+        self.assertTrue(self.nfa.startState == nfaCopy.startState,
                      msg = errorMsg)
 
     def testEqualityOfStates(self):
         state1 = State("q1", {"a" : "q2"}, epsilon = ["q2"])
         state2 = State("q2", {"a" : "q2"})
 
-        self.assert_(state1 != state2,
+        self.assertTrue(state1 != state2,
                      msg = "The state q1 should not be equal to q2")
     
 
@@ -254,7 +254,7 @@ class FsaTests(unittest.TestCase):
             for tape in testingTapes[0]:
                 errorMsg = 'The tape "' + tape + '" was accepted ' \
                       " for the " + type + ":\n" + str(testingTapes[1][type])
-                self.assert_(testingTapes[1][type].recognize(tape) == False, msg = errorMsg)
+                self.assertTrue(testingTapes[1][type].recognize(tape) == False, msg = errorMsg)
 
 
     def testRecognizableTapes(self):
@@ -267,7 +267,7 @@ class FsaTests(unittest.TestCase):
             for tape in testingTapes[0]:
                 errorMsg = 'The tape "' + tape + '" was not accepted ' \
                       " for the " + type + ":\n" + str(testingTapes[1][type])
-                self.assert_(testingTapes[1][type].recognize(tape), msg = errorMsg)
+                self.assertTrue(testingTapes[1][type].recognize(tape), msg = errorMsg)
 
 
 
@@ -279,24 +279,24 @@ class FsaTests(unittest.TestCase):
         myDfa = Dfa([q0, q1, q2], ["a", "b"], "q0", "q1")
         
         complementDfa = myDfa.complement()
-        self.assert_(complementDfa.recognize("a") == False,
+        self.assertTrue(complementDfa.recognize("a") == False,
                      msg = "The complement operation over a DFA should not recognize " + \
                      "a string recognized by the original DFA")
-        self.assert_(complementDfa.recognize("aa"),
+        self.assertTrue(complementDfa.recognize("aa"),
                      msg = "The complement operation over a DFA should recognize " + \
                      "any string not recognized by the original DFA")
 
         complementNfa = self.nfa.complement()
-        self.assert_(complementNfa.recognize("baaa!") == False,
+        self.assertTrue(complementNfa.recognize("baaa!") == False,
                      msg = "The complement operation over a NFA should not recognize " + \
                      "a string recognized by the original NFA")
-        self.assert_(complementNfa.recognize("aaabb"),
+        self.assertTrue(complementNfa.recognize("aaabb"),
                      msg = "The complement operation over a NFA should recognize " + \
                      "any string not recognized by the original NFA")
 
 
     def testPowerSet(self):
-        self.assert_(powerSet(["q1", "q2", "q3"]) == [[],
+        self.assertTrue(powerSet(["q1", "q2", "q3"]) == [[],
                                         ['q1'],
                                         ['q2'],
                                         ['q3'],
@@ -310,16 +310,16 @@ class FsaTests(unittest.TestCase):
     def testReverse(self):
         dfa = self.dfa.reverse()
 
-        self.assert_(dfa.recognize("!aaab"))
-        self.assert_(dfa.recognize("!aaaab"))
-        self.assert_(dfa.recognize("!aab"))
-        self.assert_(dfa.recognize("aaab") == False)
+        self.assertTrue(dfa.recognize("!aaab"))
+        self.assertTrue(dfa.recognize("!aaaab"))
+        self.assertTrue(dfa.recognize("!aab"))
+        self.assertTrue(dfa.recognize("aaab") == False)
 
     def testDeterminize(self):
         dfa = self.nfa.determinize()
-        self.assert_(dfa.recognize("baaa!"),
+        self.assertTrue(dfa.recognize("baaa!"),
                      msg = "The determinized NFA doesn't recognize the same language")
-        self.assert_(dfa.recognize("baab!") == False,
+        self.assertTrue(dfa.recognize("baab!") == False,
                      msg = "The determinized NFA doesn't recognize the same language")
 
 
@@ -330,7 +330,7 @@ class FsaTests(unittest.TestCase):
         q0 = State("q0", {"a" : "q1", "b" : "q1", "c" : "q1"})
         try:
             dfa = Dfa([q0], ["a", "b", "c"], q0, q0)
-        except StateError, e:
+        except StateError as e:
             pass
         except:
             msg = "The current DFA accepted a transition's state " + \
@@ -352,36 +352,36 @@ class FsaTests(unittest.TestCase):
         msg1 = "The minimization of the NFA should accept this string."
         msg2 = "The minimization of the DFA should not accept this string."
 
-        self.assert_(dfa.recognize("aa"), msg = msg1)
-        self.assert_(dfa.recognize("ab"), msg = msg1)
-        self.assert_(dfa.recognize("aaa"), msg = msg1)
-        self.assert_(dfa.recognize("aab"), msg = msg1)
-        self.assert_(dfa.recognize("aba"), msg = msg1)
-        self.assert_(dfa.recognize("abb"), msg = msg1)
-        self.assert_(dfa.recognize("aaaa"), msg = msg1)
-        self.assert_(dfa.recognize("aaab"), msg = msg1)
-        self.assert_(dfa.recognize("aaba"), msg = msg1)
-        self.assert_(dfa.recognize("aabb"), msg = msg1)
-        self.assert_(dfa.recognize("abaa"), msg = msg1)
-        self.assert_(dfa.recognize("abab"), msg = msg1)
-        self.assert_(dfa.recognize("abba"), msg = msg1)
-        self.assert_(dfa.recognize("abbb"), msg = msg1)
-        self.assert_(dfa.recognize("a") == False, msg = msg2)
-        self.assert_(dfa.recognize("b") == False, msg = msg2)
-        self.assert_(dfa.recognize("ba") == False, msg = msg2)
-        self.assert_(dfa.recognize("bb") == False, msg = msg2)
-        self.assert_(dfa.recognize("baa") == False, msg = msg2)
-        self.assert_(dfa.recognize("bab") == False, msg = msg2)
-        self.assert_(dfa.recognize("bba") == False, msg = msg2)
-        self.assert_(dfa.recognize("bbb") == False, msg = msg2)
-        self.assert_(dfa.recognize("baaa") == False, msg = msg2)
-        self.assert_(dfa.recognize("baab") == False, msg = msg2)
-        self.assert_(dfa.recognize("baba") == False, msg = msg2)
-        self.assert_(dfa.recognize("babb") == False, msg = msg2)
-        self.assert_(dfa.recognize("bbaa") == False, msg = msg2)
-        self.assert_(dfa.recognize("bbab") == False, msg = msg2)
-        self.assert_(dfa.recognize("bbba") == False, msg = msg2)
-        self.assert_(dfa.recognize("bbbb") == False, msg = msg2)
+        self.assertTrue(dfa.recognize("aa"), msg = msg1)
+        self.assertTrue(dfa.recognize("ab"), msg = msg1)
+        self.assertTrue(dfa.recognize("aaa"), msg = msg1)
+        self.assertTrue(dfa.recognize("aab"), msg = msg1)
+        self.assertTrue(dfa.recognize("aba"), msg = msg1)
+        self.assertTrue(dfa.recognize("abb"), msg = msg1)
+        self.assertTrue(dfa.recognize("aaaa"), msg = msg1)
+        self.assertTrue(dfa.recognize("aaab"), msg = msg1)
+        self.assertTrue(dfa.recognize("aaba"), msg = msg1)
+        self.assertTrue(dfa.recognize("aabb"), msg = msg1)
+        self.assertTrue(dfa.recognize("abaa"), msg = msg1)
+        self.assertTrue(dfa.recognize("abab"), msg = msg1)
+        self.assertTrue(dfa.recognize("abba"), msg = msg1)
+        self.assertTrue(dfa.recognize("abbb"), msg = msg1)
+        self.assertTrue(dfa.recognize("a") == False, msg = msg2)
+        self.assertTrue(dfa.recognize("b") == False, msg = msg2)
+        self.assertTrue(dfa.recognize("ba") == False, msg = msg2)
+        self.assertTrue(dfa.recognize("bb") == False, msg = msg2)
+        self.assertTrue(dfa.recognize("baa") == False, msg = msg2)
+        self.assertTrue(dfa.recognize("bab") == False, msg = msg2)
+        self.assertTrue(dfa.recognize("bba") == False, msg = msg2)
+        self.assertTrue(dfa.recognize("bbb") == False, msg = msg2)
+        self.assertTrue(dfa.recognize("baaa") == False, msg = msg2)
+        self.assertTrue(dfa.recognize("baab") == False, msg = msg2)
+        self.assertTrue(dfa.recognize("baba") == False, msg = msg2)
+        self.assertTrue(dfa.recognize("babb") == False, msg = msg2)
+        self.assertTrue(dfa.recognize("bbaa") == False, msg = msg2)
+        self.assertTrue(dfa.recognize("bbab") == False, msg = msg2)
+        self.assertTrue(dfa.recognize("bbba") == False, msg = msg2)
+        self.assertTrue(dfa.recognize("bbbb") == False, msg = msg2)
         
 
     def testDifference(self):
@@ -404,18 +404,18 @@ class FsaTests(unittest.TestCase):
         msg1 = "The difference of the two DFAs should accept this string."
         msg2 = "The difference of the two DFAs should not accept this string."
 
-        self.assert_(dfa.recognize("b"), msg = msg1)
-        self.assert_(dfa.recognize("bb") == False, msg = msg2)
-        self.assert_(dfa.recognize("bbb") == False, msg = msg2)
-        self.assert_(dfa.recognize("ab") == False, msg = msg2)
-        self.assert_(dfa.recognize("bab") == False, msg = msg2)
-        self.assert_(dfa.recognize("aab") == False, msg = msg2)
-        self.assert_(dfa.recognize("ba") == False, msg = msg2)
-        self.assert_(dfa.recognize("aba") == False, msg = msg2)
-        self.assert_(dfa.recognize("bba") == False, msg = msg2)
-        self.assert_(dfa.recognize("a") == False, msg = msg2)
-        self.assert_(dfa.recognize("aa") == False, msg = msg2)
-        self.assert_(dfa.recognize("aaa") == False, msg = msg2)
+        self.assertTrue(dfa.recognize("b"), msg = msg1)
+        self.assertTrue(dfa.recognize("bb") == False, msg = msg2)
+        self.assertTrue(dfa.recognize("bbb") == False, msg = msg2)
+        self.assertTrue(dfa.recognize("ab") == False, msg = msg2)
+        self.assertTrue(dfa.recognize("bab") == False, msg = msg2)
+        self.assertTrue(dfa.recognize("aab") == False, msg = msg2)
+        self.assertTrue(dfa.recognize("ba") == False, msg = msg2)
+        self.assertTrue(dfa.recognize("aba") == False, msg = msg2)
+        self.assertTrue(dfa.recognize("bba") == False, msg = msg2)
+        self.assertTrue(dfa.recognize("a") == False, msg = msg2)
+        self.assertTrue(dfa.recognize("aa") == False, msg = msg2)
+        self.assertTrue(dfa.recognize("aaa") == False, msg = msg2)
 
 
     def testIntersection(self):
@@ -435,10 +435,10 @@ class FsaTests(unittest.TestCase):
         myDfa2 = Dfa([q3, q4, q5], ["a", "b"], "q3", "q4")
         
         dfa = myDfa.intersection(myDfa2)
-        self.assert_(dfa.recognize("aaaa") == False)
-        self.assert_(dfa.recognize("aa") == False)
-        self.assert_(dfa.recognize("a") == True)
-        self.assert_(dfa.recognize("bab") == False)
+        self.assertTrue(dfa.recognize("aaaa") == False)
+        self.assertTrue(dfa.recognize("aa") == False)
+        self.assertTrue(dfa.recognize("a") == True)
+        self.assertTrue(dfa.recognize("bab") == False)
 
 
         #testing intersection with DFAs with different alphabets
@@ -457,11 +457,11 @@ class FsaTests(unittest.TestCase):
         myDfa2 = Dfa([q3, q4, q5], ["b"], "q3", "q4")
 
         dfa = myDfa.intersection(myDfa2)
-        self.assert_(dfa.recognize("aaaa") == False)
-        self.assert_(dfa.recognize("aa") == False)
-        self.assert_(dfa.recognize("a") == False)
-        self.assert_(dfa.recognize("b") == False)
-        self.assert_(dfa.recognize("bab") == False)
+        self.assertTrue(dfa.recognize("aaaa") == False)
+        self.assertTrue(dfa.recognize("aa") == False)
+        self.assertTrue(dfa.recognize("a") == False)
+        self.assertTrue(dfa.recognize("b") == False)
+        self.assertTrue(dfa.recognize("bab") == False)
 
         
 

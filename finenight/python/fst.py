@@ -17,7 +17,7 @@ class FstState(State):
 
     def __str__(self):
         output = ""
-        for transitionList in self.transitions.values():
+        for transitionList in list(self.transitions.values()):
             for transition in transitionList:
                 output += str(transition) + "\n"
         return output
@@ -37,7 +37,7 @@ class FstState(State):
         elif self.name != transition.start:
             raise ConstructionError( "The transition that you are trying to add is not part of this state")
 
-        if not self.transitions.has_key(transition.input):
+        if transition.input not in self.transitions:
             self.transitions[transition.input] = []
             
         self.transitions[transition.input].append(transition)
@@ -46,8 +46,8 @@ class FstState(State):
 
     def inverse(self):
         other = copy.copy(self)
-        for key in other.transitions.keys():
-            other.transitions[key] = map(lambda s: s.inverse(), other.transitions[key])
+        for key in list(other.transitions.keys()):
+            other.transitions[key] = [s.inverse() for s in other.transitions[key]]
 
         return other
 
@@ -58,12 +58,12 @@ class FstState(State):
         if lhs.name != rhs.name:
             okay = False
 
-        if lhs.transitions.keys() != rhs.transitions.keys():
+        if list(lhs.transitions.keys()) != list(rhs.transitions.keys()):
             okay = False
             pdb.set_trace()
 
         if okay is not False:
-            for key in lhs.transitions.keys():
+            for key in list(lhs.transitions.keys()):
                 if lhs.transitions[key] != rhs.transitions[key]:
                     okay = False
 
@@ -121,7 +121,7 @@ class Fst(Nfa):
     def __str__(self):
         output = "starting state: " + str(self.startState) + "\n"
         output += "final states: " + str(self.finalStates) + "\n"
-        for state in self.states.values():
+        for state in list(self.states.values()):
             output += str(state)
             
         return output
@@ -136,7 +136,7 @@ class Fst(Nfa):
             state = Transition(state)
         
         if state.__class__ == Transition:
-            if not self.states.has_key(state.start):
+            if state.start not in self.states:
                 self.states[state.start] = FstState(state.start)
             self.states[state.start].add(state)
 
@@ -146,7 +146,7 @@ class Fst(Nfa):
 
     def inverse(self):
         other = copy.copy(self)
-        other.states = dict(map(lambda s: (s.name, s.inverse()), other.states.values()))
+        other.states = dict([(s.name, s.inverse()) for s in list(other.states.values())])
 
         return other
     
