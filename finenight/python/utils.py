@@ -11,25 +11,24 @@ def create(start, finals, edges):
             states.setdefault(e[0], ({}, []))[0][e[1]] = e[2]
         states.setdefault(e[2], ({}, []))
     
-    states = map(lambda s: State(s[0], s[1][0], epsilon = s[1][1]), states.items())
+    states = [State(s[0], s[1][0], epsilon = s[1][1]) for s in list(states.items())]
     alphabet = []
     for s in states:
         for t in s.transitions:
             if t not in alphabet:
                 alphabet.append(t)
 
-    states_map = dict(map(lambda s: (s.name, s), states))
+    states_map = dict([(s.name, s) for s in states])
         
-    return Nfa(states, alphabet, states_map[start], map(lambda s: states_map[s], finals))
+    return Nfa(states, alphabet, states_map[start], [states_map[s] for s in finals])
 
 
 def union(lhs, rhs):
     lhs, rhs = binaryOperationRenaming(lhs, rhs, True, None)
 
     
-    new = Nfa(lhs.states.values() + rhs.states.values(),
-              lhs.alphabet + filter(lambda s: s not in lhs.alphabet,
-                                    rhs.alphabet),
+    new = Nfa(list(lhs.states.values()) + list(rhs.states.values()),
+              lhs.alphabet + [s for s in rhs.alphabet if s not in lhs.alphabet],
               lhs.startState,
               rhs.finalStates + lhs.finalStates)
     new.states[new.startState].epsilon.append(rhs.startState)
@@ -63,10 +62,10 @@ def repeat(lhs, start, end):
 # This makes the FSA cleaner to display.
 def clean(fsa):
     deadends = []
-    for label,state in fsa.states.items():
+    for label,state in list(fsa.states.items()):
         if label not in fsa.finalStates:
             destinations = []
-            for dest in state.transitions.values():
+            for dest in list(state.transitions.values()):
                 for d in dest:
                     if d not in destinations:
                         destinations.append(d)
@@ -75,8 +74,8 @@ def clean(fsa):
             if len(destinations) == 0:
                 deadends.append(label)
     
-    for label,state in fsa.states.items():
-        for input,dest in state.transitions.items():
+    for label,state in list(fsa.states.items()):
+        for input,dest in list(state.transitions.items()):
             for d in dest:
                 if d in deadends:
                     dest.remove(d)
@@ -96,8 +95,8 @@ def dump(fsa, filename):
     for fs in fsa.finalStates:
         line += " " + str(fs)
     lines = [line + "\n"]
-    for label, state in fsa.states.items():
-        for input, dest in state.transitions.items():
+    for label, state in list(fsa.states.items()):
+        for input, dest in list(state.transitions.items()):
             input, output = input.split("|")
             for d in dest:
                 lines.append("%s %s %s %s\n" % (str(label), input, output, str(d)))

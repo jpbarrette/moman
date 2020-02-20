@@ -1,4 +1,4 @@
-class Error:
+class Error(Exception):
     def __init__(self, string):
         self.string = string
 

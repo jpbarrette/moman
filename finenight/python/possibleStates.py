@@ -77,9 +77,9 @@ def transition(n, profil, pos, withTransitions):
             positions.append(fsc.StandardPosition(i + k, e + k - 1))
 
     # remove positions that goes beyong profil.
-    positions = filter(lambda s: s.i <= w, positions)
+    positions = [s for s in positions if s.i <= w]
     # remove positions that goes beyong allowed edit mistakes
-    positions = filter(lambda s: s.e <= n, positions)
+    positions = [s for s in positions if s.e <= n]
     return positions
 
 
@@ -112,7 +112,7 @@ def genAllProfilPowerSet(n):
     set[0] = [[]]
     for i in range(1,2 * n + 2):
         for j in [0,1]:
-            set[i] += map(lambda s: [j] + s, set[i - 1])
+            set[i] += [[j] + s for s in set[i - 1]]
 
     return set
 

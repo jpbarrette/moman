@@ -25,7 +25,7 @@ class FstTests(unittest.TestCase):
         errorMsg = "\nThe inverse of fst:\n" + str(self.fst) + "\n\n" \
                    "should be like:\n" + str(inverseFst) + "\n\n" \
                    "but it's like:\n" + str(realInverseFst)
-        self.assert_(inverseFst == realInverseFst, msg = errorMsg)
+        self.assertTrue(inverseFst == realInverseFst, msg = errorMsg)
 
 
 if __name__ == "__main__":

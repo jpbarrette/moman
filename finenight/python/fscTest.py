@@ -39,7 +39,7 @@ class FsaTests(unittest.TestCase):
         for entry in areSubsummed:
             errorMsg = "The entry " + str(entry[0]) + " is supposed to subsume " +\
                        "the entry " + str(entry[1]) + " but it isn't"
-            self.assert_(fsc.isSubsumming(fsc.StandardPosition(entry[0][0], entry[0][1]), \
+            self.assertTrue(fsc.isSubsumming(fsc.StandardPosition(entry[0][0], entry[0][1]), \
                                           fsc.StandardPosition(entry[1][0], entry[1][1]), n), msg = errorMsg)
 
 
@@ -69,7 +69,7 @@ class FsaTests(unittest.TestCase):
         for entry in areSubsummed:
             errorMsg = "The entry " + str(entry[0]) + " is not supposed to subsume " +\
                        "the entry " + str(entry[1]) + " but it is"
-            self.assert_(not fsc.isSubsumming(fsc.StandardPosition(entry[0][0], entry[0][1]), \
+            self.assertTrue(not fsc.isSubsumming(fsc.StandardPosition(entry[0][0], entry[0][1]), \
                                               fsc.StandardPosition(entry[1][0], entry[1][1]), n), msg = errorMsg)
 
 ##    def testComputeLevAuto(self):

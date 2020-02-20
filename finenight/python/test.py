@@ -4,7 +4,8 @@ from pdb import set_trace
 
 
 
-def getRightNonSubsumingPositions(n, (i, e), basePos):
+def getRightNonSubsumingPositions(n, iAnde, basePos):
+    (i, e) = iAnde
     positions = []
     j = i + 1
     maxDistance = basePos[0] + n + 1
@@ -27,7 +28,7 @@ def powerSet(n, pos, basePos):
     set = []
     set.append([pos])
     for p in positions:
-        s = map(lambda s: [pos] + s, powerSet(n, p, basePos))
+        s = [[pos] + s for s in powerSet(n, p, basePos)]
         set += s
     return set
 

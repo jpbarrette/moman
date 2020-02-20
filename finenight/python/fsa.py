@@ -12,7 +12,7 @@ def createStateName(fsa):
     """This function will create a state name that will not conflict
     with a particular fsa
     """
-    names = fsa.states.keys()
+    names = list(fsa.states.keys())
     newName = "newState0"
     index = 1
     if newName in names:
@@ -30,19 +30,18 @@ def __rename__(fsa, nameGenerator):
     while keysToRename != []:
         currentStateName = keysToRename.pop()
         newKeys[currentStateName] = nameGenerator.generate()
-        symbols = fsa.states[currentStateName].transitions.keys()
+        symbols = list(fsa.states[currentStateName].transitions.keys())
         symbols.sort()
         for symbol in symbols:
             for stateName in fsa.states[currentStateName].transitions[symbol]:
-                if not newKeys.has_key(stateName) and stateName not in keysToRename:
+                if stateName not in newKeys and stateName not in keysToRename:
                     keysToRename.append(stateName)
         for stateName in fsa.states[currentStateName].epsilon:
-            if not newKeys.has_key(stateName) and stateName not in keysToRename:
+            if stateName not in newKeys and stateName not in keysToRename:
                    keysToRename.append(stateName)
 
         if keysToRename == []:
-            keysToRename = filter(lambda s: not newKeys.has_key(s),
-                                  fsa.states.keys())
+            keysToRename = [s for s in list(fsa.states.keys()) if s not in newKeys]
     
     #newKeys = {}
     #for key in fsa.states.keys():
@@ -65,22 +64,19 @@ def rename(nfa, nameGenerator = None):
 
     newNfa = copy.deepcopy(nfa)
     newKeys = __rename__(nfa, nameGenerator)
-    for key in nfa.states.keys():
+    for key in list(nfa.states.keys()):
         newNfa.states[key].name = newKeys[key]
-    newNfa.states = dict(map(lambda s: (newKeys[s],
-                                        newNfa.states[s]),
-                             newNfa.states.keys()))
+    newNfa.states = dict([(newKeys[s],
+                                        newNfa.states[s]) for s in list(newNfa.states.keys())])
 
-    for state in newNfa.states.values():
-        state.epsilon = map(lambda s: newKeys[s],
-                            state.epsilon)
-        for key in state.transitions.keys():
-            state.transitions[key] = map(lambda s: newKeys[s],
-                                          state.transitions[key])
+    for state in list(newNfa.states.values()):
+        state.epsilon = [newKeys[s] for s in state.epsilon]
+        for key in list(state.transitions.keys()):
+            state.transitions[key] = [newKeys[s] for s in state.transitions[key]]
 
     #remaping start state and final states
     newNfa.startState = newKeys[nfa.startState]
-    newNfa.finalStates = map(lambda s: newKeys[s], nfa.finalStates)
+    newNfa.finalStates = [newKeys[s] for s in nfa.finalStates]
 
     return newNfa
 
@@ -121,8 +117,8 @@ class Nfa:
             okay = False
         elif lhs.finalStates != rhs.finalStates:
             okay = False
-        elif lhs.states.keys() == rhs.states.keys():
-            for key in lhs.states.keys():
+        elif list(lhs.states.keys()) == list(rhs.states.keys()):
+            for key in list(lhs.states.keys()):
                 if not lhs.states[key] == rhs.states[key]:
                     okay = False
         else:
@@ -158,13 +154,13 @@ class Nfa:
 ##                        self.startState +
 ##                        ";")
             
-            for state in self.states.values():
+            for state in list(self.states.values()):
                 for epsilon in state.epsilon:
                     f.write("\"" + str(state.name) +
                             "\" -> \"" + 
                             epsilon +
                             "\" [fontname=\"Symbol\", label=\"e\"];\n")
-                for symbol in state.transitions.keys():
+                for symbol in list(state.transitions.keys()):
                     transitions = state.transitions[symbol]
                     if transitions.__class__ is not [].__class__:
                         transitions = [transitions]
@@ -209,8 +205,8 @@ class Nfa:
         """
         self.alphabet = copy.copy(alphabet)
 
-        self.states = dict(map(lambda s: (copy.copy(s.name),
-                                          copy.deepcopy(s)), states))
+        self.states = dict([(copy.copy(s.name),
+                                          copy.deepcopy(s)) for s in states])
 
         if startState.__class__ != "".__class__:
             startState = startState.name
@@ -226,11 +222,11 @@ class Nfa:
                 self.finalStates[i] = self.finalStates[i].name
 
 
-        if startState not in self.states.keys():
+        if startState not in list(self.states.keys()):
             raise ConstructionError("The start state in not part of given states")
 
         #getting sure that finalStates are part of states
-        missingStates = filter(lambda s: s not in self.states.keys(), self.finalStates)
+        missingStates = [s for s in self.finalStates if s not in list(self.states.keys())]
         if len(missingStates) > 0:
             output = ""
             for state in missingStates:
@@ -238,25 +234,22 @@ class Nfa:
             raise ConstructionError( output + "is/are not part of the states")
 
         #adding missings symbols from the alphabet to states.
-        for state in self.states.values():
+        for state in list(self.states.values()):
             #verifying that transitions states are valid
-            for key in state.transitions.keys():
-                invalidStates = filter(lambda s: s not in self.states.keys(),
-                                       state.transitions[key])
+            for key in list(state.transitions.keys()):
+                invalidStates = [s for s in state.transitions[key] if s not in list(self.states.keys())]
                 if invalidStates != []:
                     raise StateError("state " + \
                                      str(state.name) + \
                                      " has unknown states: " + \
                                      str(invalidStates))
             
-            missingInputs = filter(lambda i: i not in state.transitions.keys(),
-                                   self.alphabet)
+            missingInputs = [i for i in self.alphabet if i not in list(state.transitions.keys())]
             for input in missingInputs:
                 state.transitions[input] = []
 
             #verifying that each states has valids symbol according to the alphabet
-            invalidInputs = filter(lambda i: i not in self.alphabet,
-                                   state.transitions.keys())
+            invalidInputs = [i for i in list(state.transitions.keys()) if i not in self.alphabet]
             if len(invalidInputs) > 0:
                 output = ""
                 for input in invalidInputs:
@@ -281,7 +274,7 @@ class Nfa:
 
     def createFrom(self, states = None, alphabet = None, startState = None, finalStates = None):
         if states is None:
-            states = self.states.values()
+            states = list(self.states.values())
 
         if alphabet is None:
             alphabet = self.alphabet
@@ -305,13 +298,12 @@ class Nfa:
 
         #states will contain all accessible states from the current state,
         #accepting the curent input.
-        states = filter(lambda s: s.transitions[input], states)
+        states = [s for s in states if s.transitions[input]]
 
         acceptedInputStates = []
 
         for state in states:
-            acceptedInputStates += map(lambda s: self.states[s],
-                                       self.states[state.name].transitions[input])
+            acceptedInputStates += [self.states[s] for s in self.states[state.name].transitions[input]]
 
         #e-closing all validated states by the input
         states = self.eClose(acceptedInputStates)
@@ -340,7 +332,7 @@ class Nfa:
 
         acceptState = False
         states = self.transitionMu([self.states[self.startState]], tape)
-        if filter(lambda s: s.name in self.finalStates, states) != []:
+        if [s for s in states if s.name in self.finalStates] != []:
             acceptState = True
                 
         return acceptState
@@ -352,9 +344,9 @@ class Nfa:
 
         while(states != []):
             #those states doesn't have any epsilon
-            emptyStates = filter(lambda s: not s.epsilon, states)
+            emptyStates = [s for s in states if not s.epsilon]
 
-            states = filter(lambda s: s not in emptyStates, states)
+            states = [s for s in states if s not in emptyStates]
             eClosedStates += emptyStates
 
             #getting states that have at most 1 epsilon to an another state
@@ -362,8 +354,7 @@ class Nfa:
 
             epsilonStates = []
             for state in states:
-                epsilonStates += filter(lambda s: s not in eClosedStates and s not in states,
-                                        map(lambda s: self.states[s], state.epsilon))
+                epsilonStates += [s for s in [self.states[s] for s in state.epsilon] if s not in eClosedStates and s not in states]
             eClosedStates += states
             states = epsilonStates
 
@@ -372,7 +363,7 @@ class Nfa:
         
     def __str__(self):
         output = ""
-        statesName = self.states.keys()
+        statesName = list(self.states.keys())
         statesName.sort()
         for stateName in statesName:
             state = self.states[stateName]
@@ -391,7 +382,7 @@ class Nfa:
         for states, False otherwise.
         """
         isColliding = False
-        if map(lambda s: s in lhs.states.keys(), rhs.states.keys()):
+        if [s in list(lhs.states.keys()) for s in list(rhs.states.keys())]:
             isColliding = True
 
         return isColliding
@@ -410,11 +401,10 @@ class Nfa:
         lhs, rhs = binaryOperationRenaming(self, other, renameStates, nameGenerator)
             
         #appending rhs startState to all lhs.finalStates
-        map(lambda s: lhs.states[s].epsilon.append(rhs.startState), lhs.finalStates)
+        list(map(lambda s: lhs.states[s].epsilon.append(rhs.startState), lhs.finalStates))
         
-        new = Nfa(lhs.states.values() + rhs.states.values(),
-                  lhs.alphabet + filter(lambda s: s not in lhs.alphabet,
-                                        rhs.alphabet),
+        new = Nfa(list(lhs.states.values()) + list(rhs.states.values()),
+                  lhs.alphabet + [s for s in rhs.alphabet if s not in lhs.alphabet],
                   lhs.startState,
                   rhs.finalStates)
 
@@ -430,13 +420,13 @@ class Nfa:
         lhs = self.determinize()
         rhs = other.determinize()
 
-        newAlphabet = lhs.alphabet + filter(lambda s: s not in lhs.alphabet, rhs.alphabet);
+        newAlphabet = lhs.alphabet + [s for s in rhs.alphabet if s not in lhs.alphabet];
 
-        lhs = Dfa(lhs.states.values(),
+        lhs = Dfa(list(lhs.states.values()),
                   newAlphabet,
                   lhs.startState,
                   lhs.finalStates)
-        rhs = Dfa(rhs.states.values(),
+        rhs = Dfa(list(rhs.states.values()),
                   newAlphabet,
                   rhs.startState,
                   rhs.finalStates)
@@ -450,9 +440,8 @@ class Nfa:
 
         lhs = lhs.determinize()
 
-        new = Nfa(lhs.states.values() + rhs.states.values(),
-                  lhs.alphabet + filter(lambda s: s not in lhs.alphabet,
-                                        rhs.alphabet),
+        new = Nfa(list(lhs.states.values()) + list(rhs.states.values()),
+                  lhs.alphabet + [s for s in rhs.alphabet if s not in lhs.alphabet],
                   lhs.startState,
                   rhs.finalStates + lhs.finalStates)
         
@@ -465,22 +454,20 @@ class Nfa:
         """
 
         #only copying states that will change
-        newStates = map(lambda s: copy.deepcopy(self.states[s]),
-                        filter(lambda s: self.startState not in self.states[s].epsilon,
-                               self.finalStates))
+        newStates = [copy.deepcopy(self.states[s]) for s in [s for s in self.finalStates if self.startState not in self.states[s].epsilon]]
 
         #those states will be added in the new FSA without being modified
-        untouchedStates = filter(lambda s: s not in newStates, self.states.values())
+        untouchedStates = [s for s in list(self.states.values()) if s not in newStates]
         
         #appending epsilon from final states to start start.
-        map(lambda s: s.epsilon.append(self.startState), newStates)
+        list(map(lambda s: s.epsilon.append(self.startState), newStates))
                      
         newStates += untouchedStates
         
 
-        newStates = dict(map(lambda s: (s.name, s), newStates))
+        newStates = dict([(s.name, s) for s in newStates])
 
-        return Nfa(newStates.values(),
+        return Nfa(list(newStates.values()),
                    self.alphabet,
                    self.startState,
                    self.finalStates)
@@ -513,23 +500,23 @@ class Nfa:
         newDfa = self.determinize()
 
         states = {}
-        for state in newDfa.states.values():
-            for symbol in state.transitions.keys():
+        for state in list(newDfa.states.values()):
+            for symbol in list(state.transitions.keys()):
                 stateTo = state.transitions[symbol][0]
-                if stateTo not in states.keys():
+                if stateTo not in list(states.keys()):
                     states[stateTo] = {}
-                if not states[stateTo].has_key(symbol):
+                if symbol not in states[stateTo]:
                     states[stateTo][symbol] = []
                 states[stateTo][symbol].append(state.name)
 
         states[newDfa.startState] = {}
-        states = dict(map(lambda k: (k, State(k, states[k])), states.keys()))
+        states = dict([(k, State(k, states[k])) for k in list(states.keys())])
 
         startStateName = createStateName(newDfa)
         startState = State(startStateName, epsilon = copy.copy(newDfa.finalStates))
         states[startStateName] = startState
 
-        return Nfa(states.values(), newDfa.alphabet, startStateName, [newDfa.startState])
+        return Nfa(list(states.values()), newDfa.alphabet, startStateName, [newDfa.startState])
 
 
 
@@ -544,8 +531,7 @@ class Nfa:
         """
 
         newDfa = self.determinize()
-        newDfa.finalStates = filter(lambda s: s not in newDfa.finalStates,
-                                    newDfa.states.keys())
+        newDfa.finalStates = [s for s in list(newDfa.states.keys()) if s not in newDfa.finalStates]
 
         return newDfa
 
@@ -559,7 +545,7 @@ class Nfa:
         lhs = self.determinize()
         rhs = other.determinize()
 
-        newAlphabet = lhs.alphabet + filter(lambda s: s not in lhs.alphabet, rhs.alphabet)
+        newAlphabet = lhs.alphabet + [s for s in rhs.alphabet if s not in lhs.alphabet]
         lhs = lhs.createFrom(alphabet = newAlphabet)
         rhs = rhs.createFrom(alphabet = newAlphabet)
         
@@ -580,7 +566,7 @@ class Nfa:
         lhs = self
         rhs = other.determinize()
         rhs = rhs.createFrom(alphabet = rhs.alphabet + \
-                             filter(lambda s: s not in rhs.alphabet, lhs.alphabet))
+                             [s for s in lhs.alphabet if s not in rhs.alphabet])
         rhs = rhs.complement()
         return lhs.intersection(rhs)
 
@@ -616,28 +602,27 @@ class Nfa:
         statesToDiscover = [[self.startState]]
         while statesToDiscover != []:
             currentStatesNames = statesToDiscover.pop()
-            currentStates = map(lambda s: self.states[s], currentStatesNames)
-            statesForAlphabet = dict(map(lambda s: (s, self.transition(currentStates, s)),
-                                         self.alphabet))
+            currentStates = [self.states[s] for s in currentStatesNames]
+            statesForAlphabet = dict([(s, self.transition(currentStates, s)) for s in self.alphabet])
 
             #taking our place
             stateDict = {}
             for symbol in self.alphabet:
-                states = map(lambda s: s.name, statesForAlphabet[symbol])
+                states = [s.name for s in statesForAlphabet[symbol]]
                 states.sort()
                 stateDict[symbol] = str(states)
             statesDict[str(currentStatesNames)] = State(str(currentStatesNames), stateDict)
-            finalStatesDict[str(currentStatesNames)] = filter(lambda s: s in self.finalStates, currentStatesNames)
+            finalStatesDict[str(currentStatesNames)] = [s for s in currentStatesNames if s in self.finalStates]
 
-            for transitions in statesForAlphabet.values():
-                transitionsName = map(lambda s: s.name, transitions)
+            for transitions in list(statesForAlphabet.values()):
+                transitionsName = [s.name for s in transitions]
                 transitionsName.sort()
-                if str(transitionsName) not in statesDict.keys():
+                if str(transitionsName) not in list(statesDict.keys()):
                      statesToDiscover.append(transitionsName)
 
-        finalStates = filter(lambda s: finalStatesDict[s], finalStatesDict)
+        finalStates = [s for s in finalStatesDict if finalStatesDict[s]]
 
-        dfa = Dfa(statesDict.values(),
+        dfa = Dfa(list(statesDict.values()),
                   self.alphabet,
                   str([self.startState]),
                   finalStates)
@@ -697,12 +682,12 @@ class Dfa(Nfa):
         Nfa.__init__(self, *args, **kargs)
 
         #checking for the presence of epsilons
-        if filter(lambda s: self.states[s].epsilon, self.states) != []:
+        if [s for s in self.states if self.states[s].epsilon] != []:
             raise ConstructionError("You cannot have epsilons in a DFA")
 
         #checking for the presence of many possible states for the same symbol
-        for state in self.states.values():
-            for targetStates in state.transitions.values():
+        for state in list(self.states.values()):
+            for targetStates in list(state.transitions.values()):
                 if len(targetStates) > 1:
                     raise StateError("You cannot have 2 possible states " + \
                                             "for the same symbol in a DFA")
@@ -715,14 +700,13 @@ class Dfa(Nfa):
         missingTransitionsStateName = createStateName(self)
 
         #checking for missing transitions
-        for stateName in self.states.keys():
-            for symbol in self.states[stateName].transitions.keys():
+        for stateName in list(self.states.keys()):
+            for symbol in list(self.states[stateName].transitions.keys()):
                 if self.states[stateName].transitions[symbol] == []:
-                    if missingTransitionsStateName not in self.states.keys():
+                    if missingTransitionsStateName not in list(self.states.keys()):
                         #creating the "missing transitions" state.
                         newState = State(missingTransitionsStateName,
-                                         dict(map(lambda s: (s, missingTransitionsStateName),
-                                                  self.alphabet)))
+                                         dict([(s, missingTransitionsStateName) for s in self.alphabet]))
                         self.states[missingTransitionsStateName] = newState
                         
                     newState = copy.deepcopy(self.states[stateName])
